@@ -1,0 +1,25 @@
+{
+  "vaultwarden_dir": "E:\\yscl\\vaultwarden-manager\\vaultwarden",
+  "exe_name": "vaultwarden.exe",
+  "port": 44444,
+  "ssl_dir": "E:\\yscl\\vaultwarden-manager\\vaultwarden\\ssl",
+  "cert_file": "cert.pem",
+  "key_file": "key.pem",
+  "backup_dir": "E:\\yscl\\vaultwarden-manager\\vaultwarden\\backup",
+  "log_file": "vaultwarden.log",
+  "err_log_file": "vaultwarden.err.log",
+  "log_lines": 300,
+  "log_max_mb": 10,
+  "log_noise_keywords": [
+    "tls handshake",
+    "HSTS"
+  ],
+  "vw_download_url": "https://github.com/nextyancc/Vaultwarden-Windows-Binary/releases/download/1.37.5-windows/vaultwarden-1.37.5-windows-x64.exe",
+  "vw_download_timeout": 120,
+  "vw_webvault_download_url": "https://github.com/dani-garcia/bw_web_builds/releases/download/v2026.10.1/bw_web_v2026.10.1.tar.gz",
+  "vw_webvault_download_timeout": 180,
+  "status_check_ms": 3000,
+  "cert_days": 3650,
+  "domain": "https://localhost:44444",
+  "admin_path": "/admin"
+}
