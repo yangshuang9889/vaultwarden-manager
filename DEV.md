@@ -69,8 +69,8 @@ AIGC:
 
 # Vaultwarden Manager 开发手册（DEV.md）
 
-> 版本：v1.9.11
-> 更新日期：2026-11-09
+> 版本：v1.9.12
+> 更新日期：2026-11-10
 > 项目路径：`E:\yscl\vaultwarden-manager`
 > 管理目标：本机 Vaultwarden 服务（部署目录随程序运行目录，便携化；端口 44444，打开地址按实际监听端口与协议动态拼接）
 
@@ -104,9 +104,10 @@ Vaultwarden Manager 是一个 Windows 桌面 GUI 管理工具，用于管理本�
 | 13 | 日志噪音过滤 | 读取日志时按 `log_noise_keywords`（默认 `tls handshake` / `HSTS`）过滤噪音行（如反复刷屏的 `tls handshake eof` 与 HSTS 告警），过滤后日志区顶部提示「（已过滤 N 行噪音日志）」；新增「原始日志」按钮可切换查看未过滤原始内容（按钮文案切换为「过滤日志」，切换状态显示在状态栏）；过滤仅影响展示，不影响 `vaultwarden.log` 原始落盘 |
 | 14 | 操作日志落盘 | 每次按钮操作（一键部署/启动/停止/复制地址/一键加密备份/导入备份/修改端口）完成后自动追加一行 `[时间戳][操作名] 结果摘要` 到部署目录 `manager.log`，复用 `rotate_log_if_needed` 按 `log_max_mb` 阈值轮转；写入失败不影响主流程，仅在状态栏提示（v1.7.2 起「生成证书」「添加系统信任」随按钮移除不再单独落盘，证书/信任状态经一键部署结果消息体现） |
 | 15 | 系统托盘（v1.6.6，v1.8.9 加固） | 关闭窗口（X）或点「退出工具」时弹出全中文确认框：选「退出程序」真正退出，选「最小化到托盘」隐藏窗口并常驻系统托盘；托盘图标单击/双击恢复主窗口，右键菜单含「显示主窗口」「退出程序」；退出时先 `icon.stop()` 清理托盘再销毁主窗口，不残留僵尸图标；托盘不可用（依赖缺失/创建失败）时关闭窗口直接退出并提示。**v1.8.9**：单实例互斥（重复启动自动激活既有窗口、托盘图标唯一）、托盘就绪等待与失败降级、回调线程安全、最小化/恢复幂等、退出清理重试兜底 |
-| 16 | 设置（v1.8.5） | 主按钮矩阵之外的「设置」特殊样式按钮：打开设置窗口，可视化配置退出记忆（`quit_confirm_skip` 跳过确认开关 + `quit_default_action` 默认动作 托盘/退出 单选 + 一键恢复「每次退出都询问」）、编辑部署下载地址（`vw_download_url` / `vw_webvault_download_url` 可查看/修改）、只读展示当前端口与部署目录；保存经 `save_config` 完整写回 config.json（不破坏其他字段），取消不写盘 ；**v1.9.9 新增「浏览器插件连接」分区**（按 `port`/`domain` 动态拼接本机与局域网地址、「复制地址」写剪贴板、「打开地址信任证书」用默认浏览器打开、「获取扩展」打开 `ext_edge_url`/`ext_chrome_url`） |
-| 17 | 关于（v1.8.6） | 主按钮矩阵之外的「关于」特殊样式按钮：打开关于窗口，展示软件名称 VaultwardenManager、版本（取自 ui.VERSION，随版本升级同步，当前 v1.9.11）、作者/版权（杨爽工作室）、制作人（杨爽）、制作工具（Marvis）、简要说明与「确定」按钮；**v1.8.6 起移除「部署目录」「配置文件」两行纯文本展示**，窗口高度 360→300 保持居中美观；**v1.8.7 起新增「制作人：杨爽」「制作工具：Marvis」两行展示**，窗口高度 300→330 保持居中美观；**v1.9.11 起窗口内新增「赞助支持」区**（赞助文案 + `assets\sponsor_qr.png` 收款二维码，二维码按窗口宽度自适应缩放、缺失时显示占位提示），窗口尺寸 460×330 → 460×560（内容多时按实际需求高度自适应），关于窗口成为赞助信息的唯一入口 |
+| 16 | 设置（v1.8.5） | 主按钮矩阵之外的「设置」特殊样式按钮：打开设置窗口，可视化配置退出记忆（`quit_confirm_skip` 跳过确认开关 + `quit_default_action` 默认动作 托盘/退出 单选 + 一键恢复「每次退出都询问」）、编辑部署下载地址（`vw_download_url` / `vw_webvault_download_url` 可查看/修改）、只读展示当前端口与部署目录；保存经 `save_config` 完整写回 config.json（不破坏其他字段），取消不写盘 ；**v1.9.9 新增「浏览器插件连接」分区**（按 `port`/`domain` 动态拼接本机与局域网地址、「复制地址」写剪贴板、「打开地址信任证书」用默认浏览器打开、「获取扩展」打开 `ext_edge_url`/`ext_chrome_url`）；**v1.9.12 新增「管理员」分区**（「获取令牌」只读部署目录 `.env` 的 `ADMIN_TOKEN` 并写系统剪贴板、界面仅显示打码信息、「打开管理面板」用默认浏览器打开 `<协议>://localhost:<port>/admin`） |
+| 17 | 关于（v1.8.6） | 主按钮矩阵之外的「关于」特殊样式按钮：打开关于窗口，展示软件名称 VaultwardenManager、版本（取自 ui.VERSION，随版本升级同步，当前 v1.9.12）、作者/版权（杨爽工作室）、制作人（杨爽）、制作工具（Marvis）、简要说明与「确定」按钮；**v1.8.6 起移除「部署目录」「配置文件」两行纯文本展示**，窗口高度 360→300 保持居中美观；**v1.8.7 起新增「制作人：杨爽」「制作工具：Marvis」两行展示**，窗口高度 300→330 保持居中美观；**v1.9.11 起窗口内新增「赞助支持」区**（赞助文案 + `assets\sponsor_qr.png` 收款二维码，二维码按窗口宽度自适应缩放、缺失时显示占位提示），窗口尺寸 460×330 → 460×560（内容多时按实际需求高度自适应），关于窗口成为赞助信息的唯一入口 |
 | 18 | 赞助支持（v1.9.0；v1.9.11 迁入关于窗口） | 浅灰卡片（`#e9ecef` 底）：标题「赞助支持」粗体深灰居中 + 说明文字 8 号深灰居中，三段文案「一元不嫌少，十元不嫌多。/无论金额多少，都是对本软件项目的认可。/赞助属于自愿行为，不购买任何功能、不享有售后服务，仅表达您的一份善意。」+ 收款二维码（Pillow `LANCZOS` 等比缩放，最长边 ≤150px，点击可用系统看图器放大）。**v1.9.0 起位于主窗口「设置」「关于」按钮下方（left 网格 row7 columnspan=2），v1.9.11 起整体迁入关于窗口**（主窗口不再显示赞助卡片，`minsize` 由 860×690 回收为 860×640），纯展示不参与状态矩阵 |
+| 19 | 获取令牌（v1.9.12） | 设置窗口「管理员」分区：一行说明文字 + 「获取令牌」「打开管理面板」两个次级按钮 + 打码状态区（`令牌：Lsbf********（43 位）`）+ 提示行。点「获取令牌」只读部署目录 `.env` 里的 `ADMIN_TOKEN`（由 `service.read_admin_token` 完成，**相对路径按 `APP_DIR` 解析、不依赖进程 CWD**），拿到值写系统剪贴板并提示「已复制到剪贴板」，界面**只显示打码信息（前 4 位 + 8 个星号 + 长度），绝不完整回显**；`.env` 不存在 / 无 `ADMIN_TOKEN` 行 / 值为空 / 值为 `$argon2` 哈希 / 读取失败（含权限不足）均有明确中文提示且不抛异常；令牌**不写入任何日志**（不经 `logs.py`，`manager.log` 无痕）；「打开管理面板」按 `port` 与 `domain` 协议打开 `<协议>://localhost:<port>/admin`，与「浏览器插件连接」分区同一套地址拼接逻辑 |
 
 界面要求：常规桌面尺寸与配色、状态醒目，全部文本中文。
 
@@ -121,7 +122,7 @@ E:\yscl\vaultwarden-manager\
 │   ├── config.py            # 配置管理（DEFAULT_CONFIG、load/save、update_port、迁移）
 │   ├── logs.py              # 日志（rotate_log_if_needed、read_log_tail、append_manager_log）
 │   ├── network.py           # 网络探测（resolve_web_url、get_listen_port、detect_scheme、get_lan_ips）
-│   ├── service.py           # 服务管理（start/stop/status、ensure_admin_token、进程路径感知）
+│   ├── service.py           # 服务管理（start/stop/status、ensure_admin_token、read_admin_token 只读令牌、进程路径感知）
 │   ├── cert.py              # 证书（generate_certificate、add_system_trust）
 │   ├── deploy.py            # 一键部署（download_file、extract_webvault_tarball、deploy_service）
 │   ├── backup.py            # 加密备份/恢复（encrypt_backup、decrypt_and_restore；v1.8.8 安全加固：PBKDF2 高迭代密钥派生/弱密码校验/完整性 HMAC/防 zip-slip 与压缩炸弹/旧格式兼容）
@@ -140,7 +141,7 @@ E:\yscl\vaultwarden-manager\
 ├── .gitignore               # 版本控制忽略规则（v1.9.11 开源化整理新增：部署目录/本地配置/构建产物/缓存/临时文件）
 ├── LICENSE                  # MIT 协议（Copyright (c) 2026 杨爽工作室 (Yang Shuang Studio)）
 ├── README.md                # 开源首页（简介/功能特性/系统要求/快速开始/配置/构建/目录结构/测试/许可/免责）
-├── CHANGELOG.md             # 面向用户的版本变更（Keep a Changelog 格式，v1.8.5–v1.9.11）
+├── CHANGELOG.md             # 面向用户的版本变更（Keep a Changelog 格式，v1.8.5–v1.9.12）
 ├── CONTRIBUTING.md          # 参与贡献（环境/依赖/运行/打包/自检/全中文约定/禁交文件）
 ├── SECURITY.md              # 安全说明与漏洞反馈渠道
 └── DEV.md                   # 本开发手册（修改代码前必须先阅读）
@@ -195,11 +196,11 @@ pip install pyinstaller   # 仅打包需要
 | `vwm/config.py` | 配置读写、默认值、旧路径迁移、端口同步 | `DEFAULT_CONFIG`、`CONFIG_PATH`、`load_config`、`save_config`、`update_port` |
 | `vwm/logs.py` | 日志轮转、日志读取、操作日志落盘 | `rotate_log_if_needed`、`read_log_tail`、`append_manager_log`、`filter_noise_lines` |
 | `vwm/network.py` | 网络探测与 URL 拼接（纯函数+子进程只读探测） | `resolve_web_url`、`get_listen_port`、`detect_scheme`、`get_lan_ips`、`is_port_open` |
-| `vwm/service.py` | 服务启停/状态、.env 同步、ADMIN_TOKEN 自动生成、部署状态磁盘判定（v1.9.4）、状态探测轻量化（v1.9.5） | `start_service`、`stop_service`、`get_service_status`、`ensure_admin_token`、`ensure_env_runtime`、`is_process_running`、`find_vw_processes`、`get_deploy_state`、`_tasklist_name_hit` |
+| `vwm/service.py` | 服务启停/状态、.env 同步、ADMIN_TOKEN 自动生成、部署状态磁盘判定（v1.9.4）、状态探测轻量化（v1.9.5）、部署目录解析与只读令牌读取（v1.9.12） | `start_service`、`stop_service`、`get_service_status`、`ensure_admin_token`、`resolve_deploy_dir`、`read_admin_token`、`mask_token`、`ensure_env_runtime`、`is_process_running`、`find_vw_processes`、`get_deploy_state`、`_tasklist_name_hit` |
 | `vwm/cert.py` | 自签名证书生成、系统信任添加 | `generate_certificate`、`add_system_trust` |
 | `vwm/deploy.py` | 一键部署全链路（下载/网页版/证书/信任/启动/轮询） | `deploy_service`、`download_file`、`extract_webvault_tarball` |
 | `vwm/backup.py` | 加密备份与恢复（zip+PBKDF2 派生 Fernet 加密；v1.8.8 起含完整性校验/防 zip-slip 与压缩炸弹/旧格式兼容；v1.9.5 起支持自定义保存位置与阶段回调） | `encrypt_backup`、`decrypt_and_restore`、`resolve_enc_target`、`generate_enc_filename`、`derive_fernet_key`、`derive_legacy_key`、`validate_password_strength`、`_check_zip_safety`、`_extract_zip_safely` |
-| `vwm/ui.py` | 弹窗工具与 UI 配色常量、设置/关于窗口（不依赖 app；v1.8.5 起依赖 config 的 CONFIG_PATH/save_config；v1.9.9 起依赖 config 的 DEFAULT_CONFIG 与 network 的 get_lan_ips，并新增浏览器插件连接分区） | `ask_quit_or_tray`、`prompt_password`、`prompt_port`、`open_settings_dialog`、`show_about_dialog`、`BTN_BG`、`BTN_BG_ACTIVE`、`BTN_DISABLED_FG`、`BTN_SECONDARY_*` 等 |
+| `vwm/ui.py` | 弹窗工具与 UI 配色常量、设置/关于窗口（不依赖 app；v1.8.5 起依赖 config 的 CONFIG_PATH/save_config；v1.9.9 起依赖 config 的 DEFAULT_CONFIG 与 network 的 get_lan_ips，并新增浏览器插件连接分区；v1.9.12 起依赖 service 的 read_admin_token/mask_token，新增管理员分区） | `ask_quit_or_tray`、`prompt_password`、`prompt_port`、`open_settings_dialog`、`show_about_dialog`、`BTN_BG`、`BTN_BG_ACTIVE`、`BTN_DISABLED_FG`、`BTN_SECONDARY_*` 等 |
 | `vwm/app.py` | GUI 主程序（窗口/按钮矩阵/托盘/后台线程） | `VaultwardenManagerApp`、`main` |
 
 **模块导入关系（单向无环）**：
@@ -260,6 +261,24 @@ vwm/ui.py  →  vwm.common / vwm.config / vwm.network
   - 返回 `(token, 是否新生成)`；`.env` 不可读写时返回 `(None, False)` 且不阻塞启动；
   - `start_service` / `deploy_service` 启动前均调用；新生成时部署/启动结果消息给出
     管理面板地址与 token 值，提示妥善保存。
+- **v1.9.12 只读令牌三件套（供设置窗口「获取令牌」使用，与上面的写入式 `ensure_admin_token` 严格区分）**：
+  - `resolve_deploy_dir(cfg, app_dir=None)`：把 `vaultwarden_dir` 解析成绝对路径。相对路径一律
+    按 **`APP_DIR`**（打包后 = exe 所在目录，源码运行 = 项目根）拼接，**禁止依赖进程当前工作目录
+    （CWD）**——这是历史遗留风险点（`config.load_config` 的 `_migrate_legacy_paths()` 用
+    `Path(raw).resolve()` 求值，结果会随启动目录漂移）。入参可为 `dict` / `str` / `None`，
+    空值或非字典时回落 `APP_DIR/vaultwarden`，`Path()` 解析异常（`OSError` / `ValueError`）同样回落，
+    绝不抛异常。
+  - `mask_token(token)`：打码为「前 4 位 + 固定 8 个星号 + 长度」（`TOKEN_MASK_HEAD=4`、
+    `TOKEN_MASK_STARS=8`），如 `Lsbf********（43 位）`；空值返回空串。星号数量与真实长度无关，
+    仅长度信息外露，界面永不完整回显令牌。
+  - `read_admin_token(cfg, app_dir=None)`：**只读**读取部署目录 `.env` 中的 `ADMIN_TOKEN`，
+    返回 `dict(ok / code / token / masked / env_path / message)`，`code` 取值
+    `ok`｜`no_env`｜`no_token`｜`argon2`｜`read_error`。解析规则：逐行匹配
+    `^\s*ADMIN_TOKEN\s*=(.*)$`，去除首尾空白与成对引号（兼容 `ADMIN_TOKEN="xxx"`），
+    **取第一个非空值**；`$argon2` 开头判定为哈希值（无法反解，提示用原始密码登录）。
+    只读语义：不生成令牌、不改 `.env`、**不写任何日志文件**（不调用 `logs.py`，
+    `manager.log` 与 `vaultwarden.log` 均无令牌痕迹）；所有异常（含权限不足 `OSError`）
+    统一转为中文 `message` 返回，绝不向上抛出。
 - `stop_service(cfg)`：**v1.8.1 起**按 `find_vw_processes(exe_name)`（Win32_Process 真实路径）精确 PID 逐个
   `taskkill /PID <pid> /T /F` 终止本用户所有同名实例（**含非部署目录残留实例，如 dist 旧部署，一并可靠停止**；
   不再依赖 tasklist 名称匹配，也不受部署目录过滤影响）；查询到进程但取不到 PID 的异常场景回退
@@ -620,7 +639,7 @@ vwm/ui.py  →  vwm.common / vwm.config / vwm.network
 
 - **v1.9.3 第二实例弹提示（单实例互斥交互完善）**：v1.9.2 及以前检测到已有实例时仅「激活既有窗口后静默退出」，用户无任何可见反馈（尤其孤儿残留场景表现为「双击无反应/打不开」）。v1.9.3 在既有互斥基础上补齐提示交互：① **弹窗防重复 `_acquire_notice_lock()`**——新增第二把互斥 `Local\VaultwardenManager_NoticeLock`（`SetLastError(0)` 前置 + `ERROR_ALREADY_EXISTS` 双条件，与主互斥判定方式一致），只有抢到该锁的第二实例才弹提示，同一时刻只弹一次；同进程二次调用返回 `False`（进程内 `_notice_lock_acquired` 标志复位保护），快速连点/连开多个第二实例不会叠加弹窗、不出错；② **`_activate_existing_instance()` 重写为「提示 + 激活」**——先经 `ctypes.windll.user32.MessageBoxW` 弹**中文置顶提示框**，标题固定 `VaultwardenManager`，flags `0x50040`（`MB_TOPMOST|MB_SETFOREGROUND|MB_ICONINFORMATION`，无父窗口也强制置顶可见、设前台、带信息图标、只有「确定」按钮）；文案按场景区分：找到主窗口 → 「程序已在运行中，请勿重复打开。\n\n可从任务栏窗口或系统托盘图标打开已有窗口。」；6×0.5s `FindWindowW` 重试后仍无主窗口（强杀遗留孤儿残留进程）→ 「程序已在运行中，但未找到它的主窗口（可能是上次被强制结束后遗留的残留进程）。\n\n请打开任务管理器→详细信息，结束所有 VaultwardenManager.exe 进程后重新启动；也可在命令行执行：taskkill /F /T /IM VaultwardenManager.exe」；③ **提示后激活、激活失败不影响退出**——`MessageBoxW` 返回后（用户点确定）再尝试 `ShowWindow(SW_RESTORE)` + `SetForegroundWindow` 激活既有窗口，`ctypes`/窗口句柄异常时静默容错，不阻塞既有实例、不影响第二实例自身退出；④ **自行退出不残留**——`app.main()` 接线为 `if not _acquire_single_instance(): if _acquire_notice_lock(): _activate_existing_instance(); return`，提示结束即 `return` 结束进程（未创建 Tk 窗口与托盘，无 GUI 残留）；⑤ `vwm/ui.py` `VERSION` → v1.9.3（关于窗口版本号同步）。⑥ **置顶加固 `_keep_dialog_topmost()`**——实测本机 Windows 11 Build 26200 上 `MB_TOPMOST` 并不落到对话框的 `WS_EX_TOPMOST` 样式位（`GetWindowLongW(h,-20)` 恒为 `0x00010101`，手工 `SetWindowPos(HWND_TOPMOST)` 亦不改变该位），且 MessageBox 未必抢到前台（后台启动场景），仅靠 flags 无法保证「置顶可见」。为彻底满足要求，新增 `_keep_dialog_topmost(user32, title)`：弹框前启动**守护线程**，以 `FindWindowW("#32770", "VaultwardenManager")` 轮询（最多 60×0.05s）命中后调用 `SetWindowPos(h, HWND_TOPMOST, 0,0,0,0, SWP_NOSIZE|SWP_NOMOVE|SWP_NOACTIVATE)` 显式置顶（`argtypes/restype` 显式声明，避免 64 位下 `HWND(-1)` 被按 32 位 int 截断），置顶后线程自然结束；线程异常、窗口未出现、`ctypes` 不可用均静默跳过，不阻塞 MessageBox 调用方，也不影响第二实例提示后的退出。⑦ **验证（收尾复测）**——静态断言 `tests\verify_single_instance_v193.py` **38/38 PASS**（原 35 项 + 新增 H1 `_keep_dialog_topmost` 定义/守护线程、H2 `SetWindowPos(HWND_TOPMOST)` 参数、H3 弹框前置顶顺序）；exe 真机 `verify_si_dist_v193.py` **15/15 PASS**（A1-A2 第一实例建窗存活、B1 第二实例 1.0s 内弹出标题为 `VaultwardenManager` 的提示框、B2 提示框可见且中心点 `WindowFromPoint` 命中自身即**未被遮挡**、B3-B5 正常场景文案含「程序已在运行中」与任务栏/托盘引导且不含孤儿文案、B6 点确定后 0.5s 内退出码 0、B7 无残留进程、B8 第一实例不受影响、C1-C4 连开 3 个只弹 1 次且全部退出、D1 收尾零残留）；`tests\verify_si_live.py`（exe 模式）实测提示 1.01s、退出码 0、无残留、连开 3 个同时仅 1 个提示框；`tests\verify_si_orphan.py`（源码）模拟孤儿互斥持有者，3.21s 弹出孤儿专用文案并退出码 0；既有回归 `tests\verify_quit_v192.py` **11/11**、`tests\verify_ghost_v192.py` **20/20**（F1 版本判据改为「VERSION ≥ v1.9.2」语义比较，适配版本升级后不再硬编码旧版本串）。
 
-### 4.8 设置与关于窗口（v1.8.5；v1.9.9 新增浏览器插件连接分区与卡片滚动；v1.9.10 局域网 IP 探测修正；v1.9.11 关于窗口内置赞助支持区）
+### 4.8 设置与关于窗口（v1.8.5；v1.9.9 新增浏览器插件连接分区与卡片滚动；v1.9.10 局域网 IP 探测修正；v1.9.11 关于窗口内置赞助支持区；v1.9.12 设置窗口新增管理员分区）
 
 - **按钮与样式**：主按钮矩阵（2×6，11 键）之外新增「设置」「关于」两个特殊样式按钮，位于
   矩阵下方第 7 行左/右两列（`grid(row=6, column=0/1)`，padx/pady 与矩阵一致）。样式明显区别于
@@ -644,8 +663,10 @@ vwm/ui.py  →  vwm.common / vwm.config / vwm.network
   `auto_restore_service`，关闭时保存会同时把 `last_exit_service_running` 置 `false`）；
   ② **部署相关下载地址**——`vw_download_url`、`vw_webvault_download_url` 两个输入框可查看/编辑；
   ③ **浏览器插件连接（v1.9.9）**——见下方独立条目；
-  ④ **只读信息**——当前端口（`cfg["port"]`）与部署目录（`cfg["vaultwarden_dir"]`）只读展示；
-  ⑤ 底部「保存设置」「取消」两按钮——保存时用 `config.save_config(cfg)` 完整写回 config.json
+  ④ **管理员（v1.9.12）**——「获取令牌」只读 `.env` 的 `ADMIN_TOKEN` 并写剪贴板、「打开管理面板」，
+  见下方独立条目；
+  ⑤ **只读信息**——当前端口（`cfg["port"]`）与部署目录（`cfg["vaultwarden_dir"]`）只读展示；
+  ⑥ 底部「保存设置」「取消」两按钮——保存时用 `config.save_config(cfg)` 完整写回 config.json
   （只更新本窗口涉及的字段，不破坏其他字段），成功后提示「设置已保存」；取消不写盘。
   调用方 `app.on_settings` 在窗口关闭后同步 `self.cfg`（重新 load_config）并刷新状态栏提示；
   **v1.9.9 起额外把 `self.set_msg` 作为 `on_status` 传入**，使设置窗口内的操作结果
@@ -688,8 +709,47 @@ vwm/ui.py  →  vwm.common / vwm.config / vwm.network
     `highlightthickness=1`、`cursor="hand2"`），分两行 `pack(side="left")`
     （复制 / 信任证书一行，Edge / Chrome 一行），字号、间距、配色与其它分区一致；
     新增控件不改动主窗口按钮矩阵与状态禁用逻辑。
+- **管理员分区（v1.9.12，获取令牌）**：白色卡片 `card_admin`（`tk.Frame(inner, bg="#ffffff")`、
+  `pack(fill="x", padx=16, pady=4)`）+ 标题「管理员」（`("Microsoft YaHei UI", 11, "bold")`、
+  `TEXT_PRIMARY`），位于「浏览器插件连接」与「当前信息（只读）」之间（分区顺序：
+  退出记忆 → 下载地址 → 浏览器插件连接 → **管理员** → 当前信息），在原有 Canvas + Scrollbar
+  滚动区内，窗口 560×690 与滚动区域自适应，不破坏既有分区与按钮矩阵。控件自上而下：
+  - **说明文字（字号 9、`TEXT_HINT`、`wraplength=460`、`justify/anchor="w"`）**：
+    「进入 Vaultwarden 管理面板需使用部署目录 .env 中的管理员令牌（ADMIN_TOKEN）。点「获取令牌」
+    会把令牌复制到系统剪贴板，粘贴到管理面板登录框即可。」
+  - **打码状态区**：`admin_mask_var`（`tk.StringVar`，初值「令牌：尚未获取」）绑定的只读
+    `tk.Label`（`#f8f9fa` 底、`TEXT_PRIMARY` 粗体、字号 9、`relief=tk.SOLID`、`bd=1`、
+    `padx/pady=8/4`、`fill="x"`），成功时显示 `令牌：<前 4 位>********（<N> 位）`，
+    失败时显示「令牌：未获取到」——**界面唯一展示令牌的位置，且永不完整回显**。
+  - **按钮行**：「获取令牌」`get_admin_token` + 「打开管理面板」`open_admin_panel`，
+    均为次级按钮样式 `ext_btn_cfg`（白底 `#ffffff`、蓝字 `BTN_SECONDARY_FG`、
+    `activebackground=BTN_SECONDARY_ACTIVE_BG`、`relief=tk.SOLID`、`bd=1`、
+    `highlightthickness=1`、`cursor="hand2"`），`pack(side="left")` 一行排列（间距 `padx=(8,0)`）。
+  - **`get_admin_token()` 行为**：`info = service.read_admin_token(cfg)`（相对路径按 `APP_DIR`
+    解析，不依赖 CWD，详见 §4.1）→ 成功时 `win.clipboard_clear()` + `clipboard_append(token)` +
+    `win.update_idletasks()`（窗口关闭后剪贴板仍保留），`admin_mask_var` 仅写入 `masked` 打码串，
+    提示行「已复制到剪贴板（<打码>）」，`on_status` 同步主状态栏（绿 `#2b8a3e`）；
+    `tk.TclError`（剪贴板不可用）时提示「已读取令牌但复制失败：系统剪贴板不可用（<打码>）」；
+    失败分支直接展示 `info["message"]` 中文提示（红 `#c92a2a`）：`.env` 不存在 →
+    「未找到 .env 文件（<路径>），请先在主界面完成「一键部署」」；无 `ADMIN_TOKEN` 行或值为空 →
+    「该配置未设置管理员令牌（.env 中没有 ADMIN_TOKEN 或值为空），可在主界面重新「一键部署」自动生成」；
+    值为 `$argon2` 哈希 → 「该 ADMIN_TOKEN 是 argon2 哈希值，无法反解出原始令牌；请使用设置该哈希时
+    对应的原始密码登录管理面板」；读取失败/权限不足 → 「读取 .env 失败：<原因>（请检查文件权限）」。
+    `read_admin_token` 外再包一层 `try/except` 兜底（异常转「读取管理员令牌失败：<原因>」），
+    **任何情况都不向 UI 线程抛异常，也不写任何日志**。
+  - **`open_admin_panel()` 行为**：`admin_url` 与「浏览器插件连接」分区**同一套拼接逻辑**——
+    `plugin_scheme` 由 `cfg["domain"]` 是否以 `http://` 开头决定，端口取
+    `cfg.get("port") or DEFAULT_CONFIG.get("port")`，路径取 `admin_path`（缺省 `/admin`，
+    缺前导 `/` 自动补齐），拼成 `<协议>://localhost:<port>/admin` 后 `webbrowser.open()`，
+    提示「已用默认浏览器打开管理面板：<url>」；`webbrowser` 异常时提示「打开浏览器失败，
+    请手动访问：<url>」，`on_status` 同步主状态栏。
+  - **底部说明（字号 8、`TEXT_HINT`、`wraplength=460`）**：「说明：界面只显示打码信息（前 4 位 +
+    长度），不会完整回显令牌；令牌仅写入剪贴板，不写入任何日志文件。若提示 argon2 哈希，说明 .env 里
+    配置的是哈希值，只能用原始密码登录。」提示行 `admin_tip_var` 绑定的 `tk.Label` 承载上述操作结果。
+  - **安全边界**：本分区**不调用 `logs.append_manager_log`**、不写 `manager.log`/`vaultwarden.log`，
+    也不修改 `.env`（与 §4.1 的写入式 `ensure_admin_token` 严格分离），令牌仅在内存与系统剪贴板中出现。
 - **关于窗口 `show_about_dialog(parent, cfg)`**：`tk.Toplevel` 居中展示软件名称
-  （VaultwardenManager）、版本（取自 `ui.VERSION`，当前 v1.9.11）、作者/版权（杨爽工作室）、
+  （VaultwardenManager）、版本（取自 `ui.VERSION`，当前 v1.9.12）、作者/版权（杨爽工作室）、
   制作人（杨爽）、制作工具（Marvis）、简要说明（Vaultwarden 密码管理器的本机管理工具）、
   **赞助支持区**与「确定」按钮；
   **v1.8.6 移除「部署目录」（`cfg["vaultwarden_dir"]`）与「配置文件」（`config.CONFIG_PATH`）
@@ -1042,6 +1102,7 @@ python -m PyInstaller -F -w --noconfirm --clean --icon=assets\app.ico --add-data
 | v1.9.11 | 2026-11-09 | Marvis file-agent | **赞助支持区迁入「关于」窗口（并改为内置 `assets` 二维码资源）**：① **参考实现对齐**——参照 `E:\yscl\SysMainToggle` 的 `SponsorMixin`（`_sponsor_qr_file` / `_load_sponsor_qr` / 二维码点击用系统看图器打开 / 缺失降级纯文字）与 `const.py` 的 `SPONSOR_QR_NAME`/`SPONSOR_QR_MAX_W`/`C_SP_*` 配色，按本项目蓝白配色与字号适配落地。② **`vwm/ui.py` 新增赞助区能力**——模块级常量 `SPONSOR_QR_NAME="sponsor_qr.png"`、`SPONSOR_QR_MAX_W=150`、`SPONSOR_QR_MIN_W=96`、`SPONSOR_TITLE="赞助支持"`、`SPONSOR_TEXT`（原三段文案）、`SPONSOR_QR_HINT="手机扫码即可 · 点击二维码可用系统看图器放大"`、`C_SP_CARD="#e9ecef"`、`C_SP_TITLE`/`C_SP_TEXT`/`C_SP_HINT`（复用 `TEXT_PRIMARY`/`TEXT_SECONDARY`/`TEXT_HINT`）；新增 `_sponsor_qr_file()`（三通道路径：`sys._MEIPASS/assets` → exe 同级 `assets` → 项目根 `assets`，全缺返回空串）、`_load_sponsor_qr(max_w=SPONSOR_QR_MAX_W)`（Pillow `Image.LANCZOS` 等比缩放 + `ImageTk.PhotoImage` 优先；失败退回 `tk.PhotoImage` + `subsample` 整数降采样；再失败返回 `(None, path, 原因)` 不抛异常）、`_sponsor_qr_max_w(container)`（容器宽 −60px，夹在 `[96,150]`，未完成布局退化为 150）；新增 `import os`。③ **`show_about_dialog` 重写**——窗口 460×330 → **460×560**（`update_idletasks` 后按 `winfo_reqheight` 取 `max(560, 需求高度)` 二次居中，尺寸不变不多调 `geometry`）；白色信息卡片下方新增浅灰赞助卡片 `sp_card`（`#e9ecef`、`padx/pady=6`、`pack(fill="x", padx=16, pady=(0,4))`）：标题「赞助支持」（10 bold `C_SP_TITLE`）+ 三段文案（8 号 `C_SP_TEXT`、居中、`wraplength=400`）+ 二维码（`tk.Label` 居中、`cursor="hand2"`，绑定 `<Button-1>` → `os.startfile` 交系统看图器放大）+ 提示行（8 号 `C_SP_HINT`）；二维码缺失/损坏时显示「二维码暂不可用（请检查 assets/sponsor_qr.png）」占位（`width=18`/`height=3`），不弹窗不抛异常、布局不塌陷；图片引用挂 `win._sponsor_qr_photo` / `win._sponsor_qr_path` 防 GC 空白。④ **`vwm/app.py` 主窗口移除**——删除 `_build_ui` 中 `sponsor` 容器（left 网格 row7 `columnspan=2` 赞助卡片代码块）、`_attach_sponsor_qr(self, parent)` 方法、顶部 `SPONSOR_QR_PATH`（写死绝对路径 `E:\yscl\shuage-coin-helper\website\ewm\ewmsk.png`）与 `SPONSOR_QR_MAX_W` 常量、`__init__` 中 `self._sponsor_qr_photo = None`；`minsize` 由 `860×690` **回收为 `860×640`**（默认 `960×700` 不变），按钮矩阵（2×6，13 键）/设置·关于（row6）/退出（row5）/状态栏布局零改动；顶部注释说明赞助区已迁至关于窗口。⑤ **设置窗口核对**——设置窗口自 v1.8.5 起即未含赞助分区（赞助区一直在主窗口），复核四个分区（退出记忆 / 下载地址 / 浏览器插件连接 / 只读信息）无任何赞助残留控件与文案；`vwm/config.py` 无赞助专用配置键，旧 `config.json` 无需迁移、不报错。⑥ **版本与文档**——`vwm/ui.py` `VERSION` → `v1.9.11`；DEV.md 更新头部版本与日期、§1 功能表 |17|/|18|、§2 目录结构（`assets\sponsor_qr.png` 说明）、§4.8 关于窗口控件清单、§4.9 全章重写（当前位置/文案配色/三通道路径/双通道加载/宽度自适应/点击交互/容错/主窗口变化/历史沿革）、§8 本条记录。⑦ **自检**——`py_compile` 全部 `.py` 通过；新增 `tests\verify_about_sponsor_v1911.py` **59/59 PASS**（A 常量与二维码资源存在性/尺寸/深色像素、B 加载缩放与缺图坏图容错及宽度夹取、C 源码断言主窗口无赞助卡片与设置窗口无残留、D 真机关于窗口弹出+二维码控件已映射+像素非空白、E 真机主窗口 13 键矩阵完好/无浅灰卡片/版本号 v1.9.11、F 真机设置窗口四分区正常无残留）；新增 `tests\verify_tray_smoke_v1911.py` **13/13 PASS**（托盘真实创建与标题、菜单结构、退出后 `_tray_icon` 清空与 pystray 停止、无非守护线程残留）；真机冒烟全程未触碰正式部署 `vaultwarden\` 数据，关闭后零进程残留；**本轮不打包 exe**。|
 | v1.9.11-doc | 2026-11-09 | Marvis file-agent | **开源化整理（仅新增文件与文档改写，无功能变更，`vwm/ui.py` 的 `VERSION` 仍为 v1.9.11，未删除/未移动任何现有文件，未改动 `vwm` 源码逻辑，未执行 `git init` 与提交）**：① **新增 `.gitignore`**——按七类分组收敛红线：部署数据（`vaultwarden/` 整个部署目录；`vwm/vaultwarden/` 开发期遗留测试部署，内含 `.env` 与 `ssl` 私钥）、本地配置（`config.json`（不带斜杠，任意层级生效，覆盖 `vwm/config.json`）、`dist/config.json`、`config.json.bak-*`）、构建产物（`build/`、`dist/*.exe`、`*.spec`、`build_*.log`）、日志（`*.log`、`*.log.[0-9]*`）、Python 缓存与虚拟环境（`__pycache__/`、`*.pyc`、`*.pyo`、`*.pyd`、`.venv/`、`venv/`、`env/`、`.pytest_cache/`）、系统与编辑器（`Thumbs.db`、`ehthumbs.db`、`Desktop.ini`、`.DS_Store`、`.idea/`、`.vscode/*` + `!.vscode/*.example.json` 保留示例）、临时与备份（`temp/`、`tmp/`、`*.tmp`、`*.bak-*`、`*.swp`、`*.enc`）；② **新增 `config.example.json`**——由项目根真实 `config.json`（968B）脱敏而来，保留全部 26 个配置键与键序：`vaultwarden_dir` 由 `E:\yscl\vaultwarden-manager\vaultwarden` 改为相对路径 `vaultwarden`，`ssl_dir`/`backup_dir` 同步改为 `vaultwarden/ssl`、`vaultwarden/backup`，`port` 取默认 `44444`、`domain` 取 `https://localhost:44444`，`quit_confirm_skip` 复位 `false`、`quit_default_action` 复位 `tray`、`last_exit_service_running` 复位 `false`、`auto_restore_service` 复位 `true`；下载地址改用公网 GitHub 官方地址（示例值非本机特有），JSON 严格合法（无注释），`load_config()` 可直接读取（相对路径以程序目录为基准展开）；③ **新增 `LICENSE`**——MIT 协议标准全文，版权行为 `Copyright (c) 2026 杨爽工作室 (Yang Shuang Studio)`；④ **新增 `CHANGELOG.md`**——Keep a Changelog 中文格式，只写对外可感知的功能/变更/修复/安全，不贴内部实现与验证脚本细节，收录 v1.9.11（赞助区迁入关于窗口、二维码内置、主窗口高度回落）、v1.9.10（局域网 IP 误选虚拟网卡修复、异步探测、打包瘦身 −33.9%）、v1.9.9（浏览器插件连接分区、设置窗口滚动布局）、v1.9.8（端口自动切换、状态记忆与自动恢复）、v1.9.7（统一图标）、v1.9.6（赞助卡片二维码）、v1.9.5（备份密码卡顿修复、自选保存位置）、v1.9.4（部署持久置灰）、v1.9.3（重复打开提示）、v1.9.2（幽灵托盘图标）、v1.9.1（退出非阻塞）、v1.9.0（赞助卡片）、v1.8.9（托盘加固 + 操作日志落盘）、v1.8.8（PBKDF2 600k + 完整性校验 + 恶意备份防护 + 弱密码拦截）、v1.8.7（关于窗口制作人/工具）、v1.8.6（关于窗口精简）、v1.8.5（设置/关于窗口），v1.0.0–v1.8.4 指向本手册 §8；⑤ **新增 `CONTRIBUTING.md`**——Windows 10/11 + Python 3.11+、依赖三条、`python vaultwarden_manager.py` 本地运行、打包命令**原样复用 §6 固化版本（含 `--clean` 与全部 `--exclude-module`，并注明漏写会导致 exe 膨胀约 50%）**、提交前自检（全部 `.py` 走 `python -m py_compile`；`tests\` 下 10 个关键回归脚本对照表）、代码约定（全中文文案、统一按钮/文字配色、端口禁止硬编码只能来自 `config.json`、模块单向依赖、配置向后兼容、三条红线）、禁交清单（部署目录/`.env`/`db.sqlite3`/私钥/`config.json`/`*.enc`/构建产物）；⑥ **新增 `SECURITY.md`**——声明为本地自建管理工具、不收集不上传任何数据、唯一网络访问为用户主动触发的下载与浏览器跳转；给出部署目录敏感文件清单（`data\db.sqlite3`、`.env` 的 `ADMIN_TOKEN`、`rsa_key.pem`、`ssl\key.pem`）、严禁入库表格、误提交后的应急处置（换 token、重签证书、清历史）、安全设计取舍（自签证书仅适用本地、备份密码不落盘且不可找回、`ADMIN_TOKEN` 首启生成提示一次、不以管理员运行）、漏洞反馈用占位符（邮箱 `<在此填写你的联系邮箱>` 或平台私密报告）；⑦ **改写 `README.md`**（147 行 → 229 行）为开源首页——版本头、项目简介与适用人群、按 6 类归并的 33 条功能特性表（部署运维 8 / 访问与地址 4 / 备份恢复 3 / 网络与端口 4 / 日志审计 4 / 配置与界面 10，不逐条流水账）、截图占位 `![主界面](assets/preview.png)`（`assets\preview.png` 113,593B 已存在）、系统要求表、快速开始双路径（Releases exe：新建空目录 → 一键部署 6 步自动行为表 → 打开 Web/面板 → 浏览器扩展登录 → 首次备份；源码运行）、配置说明（`Copy-Item config.example.json config.json` + 全字段表 + 相对路径说明）、构建方法（§6 命令原样 + 三条注意事项）、目录结构树、测试（8 个常用回归脚本命令）、版本与更新、参与贡献、许可证（MIT + 版权行）、免责声明（非官方第三方工具、不建议公网暴露、密码库安全自负、请验证恢复流程、下载第三方二进制需自行确认来源、按现状提供不担责）；⑧ **同步 §2 目录结构**——入口文件后补入 `config.example.json`、`.gitignore`、`LICENSE`、`README.md`、`CHANGELOG.md`、`CONTRIBUTING.md`、`SECURITY.md` 七条说明；末尾新增本条记录。**验证**：`.gitignore` / `config.example.json` / `LICENSE` / `CHANGELOG.md` / `CONTRIBUTING.md` / `SECURITY.md` 六个新文件均已落盘；`python -c "json.load(open('config.example.json'))"` 解析通过且键集合与项目根 `config.json` 完全一致（26 键）；README/CHANGELOG/CONTRIBUTING/SECURITY 均为 UTF-8 中文 Markdown；未触碰正式部署 `vaultwarden\`（含 `.env`、`data\db.sqlite3`、`ssl` 私钥）与本机 `config.json`；`vwm` 源码零改动。 |
 | v1.9.11-privacy | 2026-11-09 | Marvis file-agent | **开源前敏感信息脱敏（文档 / 测试脚本 / 源码注释，逻辑零变更，`VERSION` 仍为 v1.9.11）**：① **DEV.md 真实内网 IP 全量替换为 RFC 5737 文档保留段占位**——本机真实局域网地址 → `198.51.100.10`、其默认网关 → `198.51.100.1`、Hyper-V `Default Switch` 虚拟网卡地址 → `192.0.2.1`、APIPA 链路本地地址 → `169.254.10.20`（原文真实地址不再保留于文档），共 16 处；占位地址沿用原排序关系（`192.0.2.1` 仍字典序靠前，§4.13 缺陷根因说明与排序示例保持成立），`8.8.8.8` / `114.114.114.114` / `223.5.5.5`（公共 DNS）与 `127.0.0.1`（回环）作为协议说明保留；真机实测数值（评分 165、探测 0.043 s）保留原始记录，脱敏后占位网段与打分规则（私网段加分）的对应关系不再严格一致。② **tests 硬编码根路径改为可移植写法**——`verify_quit_v192.py`（`ROOT`）、`verify_si_live.py`（`BASE`）、`verify_si_orphan.py`（`BASE`）由 `r"E:\yscl\vaultwarden-manager"` 改为 `Path(__file__).resolve().parent.parent` 动态求值（均落在项目根目录）；`verify_sponsor_qr_v196.py` 的外部项目路径 `E:\yscl\shuage-coin-helper\website\ewm\ewmsk.png` 改为项目内 `assets/sponsor_qr.png` 相对定位，并新增两道保护：缺图或当前版本已无 `vwm.app.SPONSOR_QR_PATH`（v1.9.11 起改为 `assets/sponsor_qr.png` + `_sponsor_qr_file()`）时打印 `[SKIP]` 提示后 `sys.exit(0)`，不再抛 `AttributeError`；`verify_about_sponsor_v1911.py` / `verify_tray_smoke_v1911.py` 的测试夹具 IP 同步改为 `198.51.100.10`。③ **`dist\config.json` 去绝对路径**——`vaultwarden_dir` / `ssl_dir` / `backup_dir` 改为相对路径 `vaultwarden` / `vaultwarden/ssl` / `vaultwarden/backup`（与 `config.example.json` 同风格），其余字段不变。**相对路径解析基准实测结论**：`vwm/config.py` 的 `app_dir()` 决定 `CONFIG_PATH`（打包后为 exe 同级 `config.json`），但 `_migrate_legacy_paths()` 用 `Path(old_raw).expanduser().resolve()` 求值，**相对路径按进程当前工作目录（CWD）解析而非 config/exe 所在目录**；实测 `CWD=dist` → `dist\vaultwarden`，`CWD=项目根` → 项目根 `vaultwarden`，`CWD=System32` → `System32\vaultwarden`。因此常规启动（双击/快捷方式工作目录为 exe 目录）解析正确；若从其它工作目录启动且该目录下存在同名 `vaultwarden` 目录，会触发一次迁移复制并把配置改写为 exe 目录绝对路径。如需彻底消除该 CWD 依赖，建议在 `_migrate_legacy_paths()` 内对非绝对路径改按 `APP_DIR` 拼接后重新打包（本次仅脱敏，未改逻辑、未重新打包）。④ **`vwm/network.py` 两处注释中的真实 IP 同步改为占位**（`192.0.2.1` / `198.51.100.10`，纯注释改动、逻辑零不变，已打包 exe 无需重打）。⑤ 七个改动脚本 `python -m py_compile` 全部通过，`verify_sponsor_qr_v196.py` 实跑输出 `[SKIP]` 且退出码 0。⑥ `vaultwarden\` 正式部署目录（`.env` / `data` / `ssl` / `backup`）本轮零改动，未删除任何文件。 |
+| v1.9.12 | 2026-11-10 | Marvis file-agent | **设置窗口新增「管理员」分区（「获取令牌」+「打开管理面板」）**：`vwm/service.py` 新增三个**只读**函数——`resolve_deploy_dir(cfg, app_dir=None)` 把 `vaultwarden_dir` 解析为绝对路径，**相对路径一律锚定 APP_DIR（打包=exe 目录，源码=项目根），不读进程 CWD**（规避 `_migrate_legacy_paths` 按 CWD 求值导致目录漂移的已知风险点），空值/非法值回落 `APP_DIR/vaultwarden`；`mask_token(token)` 统一打码口径「前 4 位 + 固定 8 星号 + 长度」，如 `Lsbf********（43 位）`；`read_admin_token(cfg, app_dir=None)` 只读部署目录 `.env` 解析 `ADMIN_TOKEN`（正则 `^\s*ADMIN_TOKEN\s*=(.*)$`、去首尾空白、兼容成对引号、多行取第一个非空值），返回 `{ok, code, token, masked, env_path, message}`，`code` 五态 `ok / no_env / no_token / argon2 / read_error`，**任何异常都转中文 message 不向上抛出**；**只读语义**：不生成令牌、不改 `.env`、不调用 `logs` 任何函数（令牌不落盘不落日志）。`vwm/ui.py` `open_settings_dialog` 在「浏览器插件连接」之后、「当前信息（只读）」之前插入第五张卡片 `card_admin`（白底卡片，标题 + 两行说明、状态区 `admin_mask_var` 初值「令牌：尚未获取」、`ext_btn_cfg` 次级样式「获取令牌」「打开管理面板」两按钮、提示行 `admin_tip_var`、底部安全说明文字），配色沿用 `TEXT_PRIMARY/TEXT_SECONDARY/TEXT_HINT`，随 `Canvas + Scrollbar` 滚动，不破坏既有分区与底部「保存设置/取消」；「获取令牌」经 `clipboard_clear` + `clipboard_append` + `update_idletasks` 写系统剪贴板（不新增依赖），**界面只写打码串**、提示「已复制到剪贴板（…）」并回落状态栏绿字，`tk.TclError` 时提示剪贴板不可用；「打开管理面板」按 `cfg["port"]`（缺省回落 `DEFAULT_CONFIG`）与 `admin_path`（自动补前导 `/`）+ 协议探测结果拼 `%s://localhost:%s%s` 交 `webbrowser.open`，与插件连接分区打开逻辑同源；异常分支均中文提示——`.env` 缺失「未找到 .env 文件…请先在主界面完成『一键部署』」、无 `ADMIN_TOKEN`「该配置未设置管理员令牌…可重新『一键部署』自动生成」、`$argon2` 哈希「无法反解，请使用原始密码登录」、读取失败/权限不足给原因；分区编号 ④→⑤、⑤→⑥；`VERSION` → v1.9.12。验证：新增 `tests\verify_admin_token_v1912.py` **59/59 PASS**（A 常量与接口 / B 正常读取含 CRLF·带引号·多行取首个非空·只读不改 `.env` / C 相对路径按 APP_DIR 解析且 CWD 下同名目录令牌不被读到 / D 异常六分支（缺 `.env`、无 `ADMIN_TOKEN`、值为空、argon2 哈希、权限拒绝、目录非法）/ E 打码规范 / F 只读与日志安全（源码无写盘、无 `append_manager_log`、部署目录未产生 `manager.log`）/ G 真机设置窗口（分区齐全、两按钮、初始文案、点击后打码上屏、界面不含完整令牌、剪贴板与 `.env` 值一致、状态栏提示不含令牌、URL 按 `port`+协议拼接、滚动区域覆盖新增分区、保存/取消在位、关闭无残留）/ G18 HTTP 协议分支）；`py_compile` 对 `vwm/service.py`、`vwm/ui.py` 通过，`import` 校验 `ui.VERSION == "v1.9.12"`；本轮**未重新打包 exe**、未触碰任何部署数据；同步更新 §1 功能表（19）、§2 目录结构、§4.0 模块表、§4.1、§4.8、§8。 |
 *（内容由AI生成，仅供参考）*
 *（内容由AI生成，仅供参考）*
 *（内容由AI生成，仅供参考）*

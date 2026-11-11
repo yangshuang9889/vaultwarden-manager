@@ -1,0 +1,59 @@
+# ============================================================
+# VaultwardenManager .gitignore
+# 目标：绝不把部署数据、凭据、本机配置与构建产物提交到公开仓库
+# ============================================================
+
+# ---------- 1. Vaultwarden 部署目录（含私密数据，严禁提交）----------
+# 根部署目录：.env（含 ADMIN_TOKEN）、data\db.sqlite3、rsa_key.pem、
+# ssl\ 私钥与证书、web-vault\、日志、backup\
+vaultwarden/
+# 开发期遗留的测试部署目录（同样含 .env 与 ssl 私钥）
+vwm/vaultwarden/
+
+# ---------- 2. 本地配置（含本机绝对路径，对外使用 config.example.json）----------
+# 注意：不带斜杠的写法在任意层级生效，vwm/config.json 一并忽略
+config.json
+dist/config.json
+# 迁移过程产生的配置备份
+config.json.bak-*
+
+# ---------- 3. 构建产物 ----------
+build/
+dist/*.exe
+*.spec
+# PyInstaller 构建日志（build_<version>_<timestamp>.log）
+build_*.log
+
+# ---------- 4. 日志 ----------
+*.log
+*.log.[0-9]*
+
+# ---------- 5. Python 缓存与虚拟环境 ----------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.pytest_cache/
+
+# ---------- 6. 系统与编辑器 ----------
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+.idea/
+.vscode/*
+# 允许提交示例配置（按需改名后入库）
+!.vscode/*.example.json
+
+# ---------- 7. 中间产物与临时文件 ----------
+temp/
+tmp/
+*.tmp
+*.bak-*
+*.swp
+
+# ---------- 8. 备份文件（用户数据，不入库）----------
+*.enc

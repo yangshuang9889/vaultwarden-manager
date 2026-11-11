@@ -13,6 +13,7 @@ import subprocess
 from pathlib import Path
 
 from .common import CREATE_NO_WINDOW
+from .config import APP_DIR
 from .logs import rotate_log_if_needed
 from .network import get_listen_port, is_port_in_use, is_port_open, pick_free_port
 
@@ -231,6 +232,107 @@ def ensure_admin_token(cfg: dict) -> tuple:
     except OSError:
         return None, False
     return token, True
+
+# ---------------------------------------------------------------------------
+# v1.9.12：「获取令牌」——只读 .env 里的 ADMIN_TOKEN（绝不生成、绝不改文件、
+# 绝不写日志；令牌只进系统剪贴板，界面上仅显示打码信息）
+# ---------------------------------------------------------------------------
+TOKEN_MASK_HEAD = 4       # 打码保留的前缀位数（前 4 位）
+TOKEN_MASK_STARS = 8      # 打码星号固定 8 个，与令牌真实长度无关
+
+def resolve_deploy_dir(cfg, app_dir=None) -> Path:
+    """把 vaultwarden_dir 解析成绝对路径（v1.9.12）。
+
+    相对路径一律按 APP_DIR 解析（打包后 APP_DIR = exe 所在目录，源码运行 = 项目根），
+    **禁止依赖进程当前工作目录（CWD）**——这是历史遗留的已知风险点：
+    早期 `_migrate_legacy_paths` 用 Path(raw).resolve() 求值，结果会随启动目录漂移。
+    """
+    if isinstance(cfg, dict):
+        raw = str(cfg.get("vaultwarden_dir") or "").strip()
+    elif cfg is None:
+        raw = ""
+    else:
+        raw = str(cfg).strip()
+    base = Path(app_dir) if app_dir else APP_DIR
+    if not raw:
+        return base / "vaultwarden"
+    try:
+        path = Path(raw).expanduser()
+    except (OSError, ValueError):
+        return base / "vaultwarden"
+    if not path.is_absolute():
+        path = base / path          # 相对路径锚定 APP_DIR，不读 CWD
+    return path
+
+def mask_token(token: str) -> str:
+    """令牌打码：前 4 位 + 8 个星号 + 长度，如 `Lsbf********（43 位）`。"""
+    if not token:
+        return ""
+    return "%s%s（%d 位）" % (token[:TOKEN_MASK_HEAD], "*" * TOKEN_MASK_STARS, len(token))
+
+def read_admin_token(cfg, app_dir=None) -> dict:
+    """读取部署目录 .env 中的 ADMIN_TOKEN（v1.9.12，供设置窗口「获取令牌」按钮使用）。
+
+    只读语义：不生成新令牌、不修改 `.env`、不写任何日志文件（令牌严禁落盘/落日志）。
+    返回 dict 字段：
+      ok(bool) / code(str) / token(str 完整值，仅用于写剪贴板) / masked(str 打码串)
+      / env_path(str) / message(str 中文提示)
+    code 取值：ok | no_env（.env 不存在）| no_token（无 ADMIN_TOKEN 行或值为空）
+              | argon2（值是 argon2 哈希，无法反解）| read_error（读取失败/权限不足）
+    任何异常都转成中文 message，绝不向上抛出。
+    """
+    info = {"ok": False, "code": "no_env", "token": "", "masked": "",
+            "env_path": "", "message": ""}
+    try:
+        env_path = resolve_deploy_dir(cfg, app_dir) / ".env"
+    except Exception as exc:  # noqa: BLE001 - 兜底：路径异常也给中文提示
+        info["code"] = "read_error"
+        info["message"] = "定位部署目录失败：%s" % exc
+        return info
+    info["env_path"] = str(env_path)
+
+    try:
+        exists = env_path.is_file()
+    except OSError as exc:
+        info["code"] = "read_error"
+        info["message"] = "读取 .env 失败：%s（请检查文件权限）" % exc
+        return info
+    if not exists:
+        info["message"] = "未找到 .env 文件（%s），请先在主界面完成「一键部署」" % env_path
+        return info
+
+    try:
+        text = env_path.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        info["code"] = "read_error"
+        info["message"] = "读取 .env 失败：%s（请检查文件权限）" % exc
+        return info
+
+    value = ""
+    for line in text.splitlines():
+        m = re.match(r"^\s*ADMIN_TOKEN\s*=(.*)$", line)
+        if not m:
+            continue
+        value = m.group(1).strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+            value = value[1:-1].strip()          # 兼容带引号的写法
+        if value:
+            break                                # 取第一个非空值
+    if not value:
+        info["code"] = "no_token"
+        info["message"] = ("该配置未设置管理员令牌（.env 中没有 ADMIN_TOKEN 或值为空），"
+                           "可在主界面重新「一键部署」自动生成")
+        return info
+    if value.startswith("$argon2"):
+        info["code"] = "argon2"
+        info["message"] = ("该 ADMIN_TOKEN 是 argon2 哈希值，无法反解出原始令牌；"
+                           "请使用设置该哈希时对应的原始密码登录管理面板")
+        return info
+
+    masked = mask_token(value)
+    info.update({"ok": True, "code": "ok", "token": value, "masked": masked,
+                 "message": "已复制到剪贴板（%s）" % masked})
+    return info
 
 def _own_service_holds_port(cfg: dict, port: int) -> bool:
     """v1.9.8：端口是否由本程序管理的 vaultwarden 实例自身占用（正常情况，不切换）。

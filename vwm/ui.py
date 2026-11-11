@@ -13,6 +13,7 @@ from tkinter import messagebox
 
 from .config import CONFIG_PATH, DEFAULT_CONFIG, save_config
 from .network import get_lan_ip_info
+from .service import mask_token, read_admin_token
 
 # v1.7.3：统一按钮配色常量——所有按钮（功能矩阵/原始日志切换/退出/刷新日志/弹窗按钮）
 # NORMAL 态背景完全一致（协调蓝 #1971c2，白字；按压态同族深蓝 #1864ab）。
@@ -27,7 +28,7 @@ TEXT_HINT = "#495057"        # 提示文字（深灰，浅底 #f0f2f5 对比 >5:
 BTN_DISABLED_FG = "#212529"  # v1.7.5：按钮禁用态文字（系统灰底上最深灰，高对比清晰可读）
 
 # v1.9.9：程序版本号（关于窗口展示；版本升级时同步 DEV.md）
-VERSION = "v1.9.11"
+VERSION = "v1.9.12"
 
 # v1.8.5：次级按钮（设置/关于）特殊样式——白底蓝字 + 蓝色描边，明显区别于主操作按钮
 # （蓝底白字 #1971c2/#1864ab），整体仍与 #1971c2 蓝色系协调。
@@ -266,7 +267,13 @@ def open_settings_dialog(parent, cfg: dict, on_status=None):
        提供「复制地址」（写系统剪贴板 + 状态栏提示）、「打开地址信任证书」（默认浏览器
        打开地址，需先接受自签证书）、「获取浏览器扩展」（Edge/Chrome 商店地址取自配置
        键 ext_edge_url / ext_chrome_url，缺失时用默认值兜底）三个操作按钮与使用说明；
-    ⑤ 当前信息（只读）：端口、部署目录。
+    ⑤ 管理员（v1.9.12）：读取部署目录 `.env` 的 ADMIN_TOKEN（相对路径按 APP_DIR 解析，
+       不依赖进程 CWD），点「获取令牌」写入系统剪贴板并提示「已复制到剪贴板」，界面只
+       显示打码信息（前 4 位 + 长度，如 Lsbf********（43 位）），绝不完整回显；异常分支
+       （.env 缺失 / 无 ADMIN_TOKEN / argon2 哈希 / 读取失败）均给中文提示且不抛异常；
+       另提供「打开管理面板」按钮（默认浏览器打开 http(s)://localhost:<port>/<admin_path>，
+       端口取 cfg['port']、协议与浏览器插件分区一致）。令牌只进剪贴板，不写任何日志；
+    ⑥ 当前信息（只读）：端口、部署目录。
 
     布局：v1.9.9 起卡片区放入 Canvas + 垂直滚动条（分区增多后内容超出固定高度，
     小屏/高 DPI 下仍可访问全部分区）；底部「保存设置」「取消」固定在窗口底部不滚动。
@@ -531,7 +538,86 @@ def open_settings_dialog(parent, cfg: dict, on_status=None):
              justify="left", anchor="w", wraplength=460).pack(fill=tk.X, padx=18, pady=(0, 12))
     win.after(60, _load_lan_ip)             # 异步探测，避免打开窗口时卡顿
 
-    # ---- 卡片四：当前信息（只读） ----
+    # ---- 卡片四：管理员（v1.9.12）----
+    # 「获取令牌」：只读部署目录 .env 的 ADMIN_TOKEN → 写系统剪贴板；界面仅显示打码信息，
+    # 绝不完整回显令牌；所有异常分支都给中文提示且不抛异常；令牌不写任何日志（不调用 logs）。
+    card_admin = tk.Frame(inner, bg="#ffffff")
+    card_admin.pack(fill=tk.X, padx=16, pady=4)
+    tk.Label(card_admin, text="管理员", font=("Microsoft YaHei UI", 11, "bold"),
+             bg="#ffffff", fg=TEXT_PRIMARY).pack(anchor="w", padx=14, pady=(12, 4))
+    tk.Label(card_admin,
+             text="进入 Vaultwarden 管理面板需使用部署目录 .env 中的管理员令牌（ADMIN_TOKEN）。"
+                  "点「获取令牌」会把令牌复制到系统剪贴板，粘贴到管理面板登录框即可。",
+             font=("Microsoft YaHei UI", 9), bg="#ffffff", fg=TEXT_HINT,
+             justify="left", anchor="w", wraplength=460).pack(fill=tk.X, padx=18, pady=(0, 6))
+
+    admin_mask_var = tk.StringVar(value="令牌：尚未获取")
+    admin_tip_var = tk.StringVar(value="")
+    tk.Label(card_admin, textvariable=admin_mask_var, font=("Microsoft YaHei UI", 9, "bold"),
+             bg="#f8f9fa", fg=TEXT_PRIMARY, anchor="w", relief=tk.SOLID, bd=1,
+             padx=8, pady=4).pack(fill=tk.X, padx=18, pady=(0, 4))
+
+    admin_port = cfg.get("port") or DEFAULT_CONFIG.get("port") or ""
+    admin_path_raw = str(cfg.get("admin_path") or DEFAULT_CONFIG.get("admin_path") or "/admin").strip()
+    admin_path = admin_path_raw if admin_path_raw.startswith("/") else "/" + admin_path_raw
+    admin_url = "%s://localhost:%s%s" % (plugin_scheme, admin_port, admin_path)
+
+    def get_admin_token():
+        # 只读 .env + 写剪贴板；异常统一转中文提示，不抛异常、不落日志
+        try:
+            info = read_admin_token(cfg)
+        except Exception as exc:  # noqa: BLE001 - 兜底，绝不让异常冒到 UI 线程
+            info = {"ok": False, "message": "读取管理员令牌失败：%s" % exc, "masked": ""}
+        if info.get("ok"):
+            token = info.get("token") or ""
+            masked = info.get("masked") or mask_token(token)
+            admin_mask_var.set("令牌：%s" % masked)       # 仅打码信息上屏
+            copied = True
+            try:
+                win.clipboard_clear()
+                win.clipboard_append(token)
+                win.update_idletasks()   # 立即生效，窗口关闭后剪贴板内容仍保留
+            except tk.TclError:
+                copied = False
+            if copied:
+                tip = "已复制到剪贴板（%s）" % masked
+            else:
+                tip = "已读取令牌但复制失败：系统剪贴板不可用（%s）" % masked
+        else:
+            admin_mask_var.set("令牌：未获取到")
+            tip = info.get("message") or "获取管理员令牌失败"
+        admin_tip_var.set(tip)
+        if callable(on_status):
+            on_status("已复制管理员令牌到剪贴板" if info.get("ok") else tip,
+                      "#2b8a3e" if info.get("ok") else "#c92a2a")
+
+    def open_admin_panel():
+        try:
+            webbrowser.open(admin_url)
+            tip = "已用默认浏览器打开管理面板：%s" % admin_url
+        except Exception:  # noqa: BLE001
+            tip = "打开浏览器失败，请手动访问：%s" % admin_url
+        admin_tip_var.set(tip)
+        if callable(on_status):
+            on_status(tip, TEXT_HINT)
+
+    admin_btn_row = tk.Frame(card_admin, bg="#ffffff")
+    admin_btn_row.pack(fill=tk.X, padx=18, pady=(2, 4))
+    tk.Button(admin_btn_row, text="获取令牌", command=get_admin_token,
+              **ext_btn_cfg).pack(side=tk.LEFT)
+    tk.Button(admin_btn_row, text="打开管理面板", command=open_admin_panel,
+              **ext_btn_cfg).pack(side=tk.LEFT, padx=(8, 0))
+
+    tk.Label(card_admin, textvariable=admin_tip_var, font=("Microsoft YaHei UI", 8),
+             bg="#ffffff", fg=TEXT_HINT, justify="left", anchor="w",
+             wraplength=460).pack(fill=tk.X, padx=18, pady=(0, 2))
+    tk.Label(card_admin,
+             text="说明：界面只显示打码信息（前 4 位 + 长度），不会完整回显令牌；令牌仅写入剪贴板，"
+                  "不写入任何日志文件。若提示 argon2 哈希，说明 .env 里配置的是哈希值，只能用原始密码登录。",
+             font=("Microsoft YaHei UI", 8), bg="#ffffff", fg=TEXT_HINT,
+             justify="left", anchor="w", wraplength=460).pack(fill=tk.X, padx=18, pady=(0, 12))
+
+    # ---- 卡片五：当前信息（只读） ----
     card3 = tk.Frame(inner, bg="#ffffff")
     card3.pack(fill=tk.X, padx=16, pady=4)
     tk.Label(card3, text="当前信息（只读）", font=("Microsoft YaHei UI", 11, "bold"),
