@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 查阅文档（README / DEV.md）
+    url: https://github.com/yangshuang9889/vaultwarden-manager/blob/main/README.md
+    about: 部署步骤、配置字段、构建方法、目录结构与常见问题先看这里
+  - name: 查看最新版本与更新记录
+    url: https://github.com/yangshuang9889/vaultwarden-manager/releases
+    about: 下载发布包、查看 CHANGELOG，确认问题是否已在更新中修复
+  - name: 报告安全漏洞（请勿公开提交 Issue）
+    url: https://github.com/yangshuang9889/vaultwarden-manager/blob/main/SECURITY.md
+    about: 涉及凭据泄露、证书校验、权限提升的问题请走私下渠道

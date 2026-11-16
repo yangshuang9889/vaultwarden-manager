@@ -1,0 +1,31 @@
+# 仓库统一的属性声明
+#
+# 说明：
+#   本仓库历史上同时存在 CRLF（源码/README）与 LF（部分文档）两种行尾，
+#   这里刻意**不做行尾强制转换**（* -text），避免一次规范化把所有行都变成
+#   “已修改”，污染提交历史与 blame。新增文件请保持与你所修改文件一致的行尾。
+#
+# 二进制资源：不做文本 diff / 合并，按原样存储
+*.exe      binary
+*.ico      binary
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.gif      binary
+*.webp     binary
+*.zip      binary
+*.7z       binary
+*.rar      binary
+*.pem      binary
+*.key      binary
+*.pfx      binary
+*.db       binary
+*.sqlite3  binary
+*.exe      -diff
+
+# 文本文件：按原样存储，不自动转换行尾
+*          -text
+
+# 第三方生成目录（供 GitHub 语言统计与 diff 折叠参考）
+dist/**    linguist-vendored
+build/**   linguist-vendored

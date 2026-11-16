@@ -1,5 +1,12 @@
 # VaultwardenManager
 
+[![最新版本](https://img.shields.io/github/v/release/yangshuang9889/vaultwarden-manager?display_name=tag&sort=semver&label=release)](https://github.com/yangshuang9889/vaultwarden-manager/releases/latest)
+[![下载量](https://img.shields.io/github/downloads/yangshuang9889/vaultwarden-manager/total?label=downloads)](https://github.com/yangshuang9889/vaultwarden-manager/releases)
+[![许可证](https://img.shields.io/github/license/yangshuang9889/vaultwarden-manager?label=license)](LICENSE)
+[![平台](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011%20x64-0078D4?logo=windows&logoColor=white)](#系统要求)
+[![Python](https://img.shields.io/badge/python-3.11-3776AB?logo=python&logoColor=white)](requirements.txt)
+[![CI](https://github.com/yangshuang9889/vaultwarden-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/yangshuang9889/vaultwarden-manager/actions/workflows/ci.yml)
+
 > 自建 Vaultwarden 的 Windows 桌面管理工具｜版本 v1.9.12｜平台 Windows 10/11 x64｜作者 杨爽工作室｜制作工具 Marvis
 
 VaultwardenManager 是一个用 Python + tkinter 编写的**单文件绿色工具**，把「自建 Vaultwarden 密码库服务」的
@@ -124,7 +131,19 @@ VaultwardenManager 是一个用 Python + tkinter 编写的**单文件绿色工�
 
 ### 方式一：使用发布包（推荐普通用户）
 
-1. 从仓库 Releases 页面下载最新的 `VaultwardenManager.exe`（若尚未发布，可用下方「方式二」自行构建）。
+1. 下载最新发布包：**[VaultwardenManager.exe（v1.9.12）](https://github.com/yangshuang9889/vaultwarden-manager/releases/download/v1.9.12/VaultwardenManager.exe)**
+   ，约 22.4 MB。历史版本见 [Releases 页面](https://github.com/yangshuang9889/vaultwarden-manager/releases)；若暂无发布包，可用下方「方式二」自行构建。
+
+   下载后可核对 SHA256，确认文件完整且未被篡改：
+
+   ```powershell
+   Get-FileHash .\VaultwardenManager.exe -Algorithm SHA256
+   ```
+
+   | 版本 | 文件大小 | SHA256 |
+   |---|---|---|
+   | v1.9.12 | 23,451,935 字节 | `861b3c195799dc7853194e4921354e9e53f01b1b0928e16c541435c390fb0d62` |
+
 2. 新建一个空目录（例如 `D:\Vaultwarden`），把 exe 放进去——部署目录会随之生成在该目录下。
 3. 双击运行，点击「一键部署」，等待进度条完成。部署过程会自动完成下表中所有操作。
 
@@ -144,7 +163,7 @@ VaultwardenManager 是一个用 Python + tkinter 编写的**单文件绿色工�
 ### 方式二：源码运行（开发者）
 
 ```powershell
-git clone <你的仓库地址> vaultwarden-manager
+git clone https://github.com/yangshuang9889/vaultwarden-manager.git
 cd vaultwarden-manager
 pip install -r requirements.txt
 python vaultwarden_manager.py
@@ -261,8 +280,12 @@ python tests\verify_quit_v192.py           # 退出链路清理
 ## 版本与更新
 
 - 当前版本：**v1.9.12**（见「关于」窗口或 `vwm/ui.py` 的 `VERSION`）。
+- 发布包下载与历史版本：[Releases](https://github.com/yangshuang9889/vaultwarden-manager/releases)。
 - 面向用户的变更记录：[CHANGELOG.md](CHANGELOG.md)。
 - 完整开发记录、模块说明与版本演进：[DEV.md](DEV.md)。
+
+升级方式：下载新版 exe 覆盖旧文件即可，`config.json`、部署目录与备份均不受影响（配置结构变更会在
+CHANGELOG 中标注）。回滚同理——换回旧版 exe。
 
 ## 参与贡献
 

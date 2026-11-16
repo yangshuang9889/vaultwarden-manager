@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  selfcheck:
+    name: 仓库自检（语法 / 敏感信息 / 版本号 / 配置）
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 准备 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安装校验依赖
+        run: python -m pip install --upgrade pip pyyaml
+
+      - name: 执行自检脚本
+        run: python .github/scripts/check_repo.py
+
+  windows-import:
+    name: Windows 依赖与模块导入检查
+    runs-on: windows-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 准备 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安装运行依赖
+        run: python -m pip install --upgrade pip -r requirements.txt
+
+      - name: 导入 vwm 包（不启动界面）
+        shell: pwsh
+        run: |
+          python -c "import vwm; print('vwm', vwm.__version__, 'CRYPTO_OK =', vwm.CRYPTO_OK)"
+          python -c "import vwm.config, vwm.service, vwm.deploy, vwm.cert, vwm.backup, vwm.logs, vwm.network; print('modules import ok')"

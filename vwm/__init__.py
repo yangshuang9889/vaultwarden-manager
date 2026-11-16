@@ -6,7 +6,7 @@ Vaultwarden Manager 模块包（v1.8.0 模块化重构）
 模块   : config / service / deploy / cert / backup / logs / network / ui / app
 依赖图 : 见 DEV.md「模块结构」章节，无循环依赖。
 """
-__version__ = "1.8.0"
+__version__ = "1.9.12"
 
 try:
     from cryptography import x509

@@ -1,0 +1,88 @@
+name: 缺陷报告
+description: 报告一个可复现的问题（部署失败、服务启停异常、证书不被信任、备份恢复出错等）
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。为了让问题能快速定位，请尽量把下面的信息填全。
+
+        > **安全提醒**：请勿粘贴 `ADMIN_TOKEN`、`.env` 全文、`ssl\key.pem`、密码、个人邮箱或真实公网 IP。
+        > 日志里的令牌/IP 请打码成 `***`。涉及安全漏洞请改用 [SECURITY.md](../blob/main/SECURITY.md) 的私下渠道。
+
+  - type: input
+    id: version
+    attributes:
+      label: 工具版本
+      description: 见程序「关于」窗口，或程序所在目录的 exe 文件名标签
+      placeholder: v1.9.12
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Windows 版本
+      description: Win+R 输入 winver 可查看，例如 Windows 11 26200
+      placeholder: Windows 11 24H2 (Build 26200)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: stage
+    attributes:
+      label: 出问题时所处阶段
+      options:
+        - 程序启动 / 界面
+        - 一键部署（下载 vaultwarden.exe）
+        - 一键部署（下载 web-vault）
+        - 证书生成或信任安装
+        - 服务启动 / 停止
+        - 打开 Web / 打开管理面板
+        - 加密备份 / 恢复
+        - 端口或网络检测
+        - 托盘 / 单实例
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: 现象描述
+      description: 你期望发生什么、实际发生了什么，是否有报错弹窗（请抄下原文）
+      placeholder: 点击「一键部署」后进度卡在 42%，弹窗提示「下载失败：HTTP 404」。
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 从干净目录开始的具体操作顺序
+      placeholder: |
+        1. 新建空目录 D:\Vaultwarden，放入 VaultwardenManager.exe
+        2. 双击运行，点击「一键部署」
+        3. 进度到 42% 弹出错误
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 相关日志（已脱敏）
+      description: 日志位于程序目录的 `logs\manager.log` 与部署目录的 `vaultwarden\data\vaultwarden.log`，截取报错前后 30 行即可
+      render: text
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 提交前确认
+      options:
+        - label: 我已搜索过现有 Issue，未发现重复问题
+          required: true
+        - label: 我已移除日志与截图中的令牌、密钥、密码、邮箱等敏感信息
+          required: true

@@ -1,0 +1,62 @@
+name: 功能建议
+description: 提出新功能或使用体验上的改进建议
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请先说明你要解决的**真实使用场景**，而不是直接给实现方案——这样更容易找到更合适的做法。
+
+        > 本项目定位：自建 Vaultwarden 的 **Windows 桌面端本地管理壳**（部署/启停/证书/备份/令牌）。
+        > 不打算实现的功能：修改 Vaultwarden 服务端源码、托管密码数据、接入第三方云备份。
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 涉及模块
+      options:
+        - 一键部署（deploy）
+        - 服务控制（service）
+        - 证书与信任（cert）
+        - 备份与恢复（backup）
+        - 配置与端口（config / network）
+        - 日志查看（logs）
+        - 界面与交互（ui）
+        - 文档与构建（README / 打包）
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: scene
+    attributes:
+      label: 使用场景
+      description: 你在什么情况下、想完成什么目标时感到不便
+      placeholder: 我在三台机器上分别部署，每次都要手动改端口并重新信任证书。
+    validations:
+      required: true
+
+  - type: textarea
+    id: expect
+    attributes:
+      label: 期望的行为
+      placeholder: 希望能导出/导入一份部署配置，换机后一键复用。
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternative
+    attributes:
+      label: 你目前是怎么绕过的
+      description: 现有的替代做法（若有）
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: pr
+    attributes:
+      label: 参与意愿
+      options:
+        - label: 我愿意自己提交 PR 实现该功能
+          required: false
