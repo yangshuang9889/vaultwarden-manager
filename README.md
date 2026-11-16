@@ -277,6 +277,16 @@ python tests\verify_quit_v192.py           # 退出链路清理
 
 提交前的完整自检流程（含语法编译检查与打包回归清单）见 [CONTRIBUTING.md](CONTRIBUTING.md) 第 6 节。
 
+仓库自带一个零第三方依赖的自检脚本，与 CI 使用的是同一份：
+
+```powershell
+python .github\scripts\check_repo.py
+```
+
+检查项：Python 语法编译、敏感信息扫描（私钥块 / 本机绝对路径 / 真实内网 IP / 明文 `ADMIN_TOKEN` / 邮箱）、
+版本号一致性（`vwm/ui.py`、`vwm/__init__.py`、README、CHANGELOG 四处）、必备文件清单、GitHub YAML 配置语法。
+全部通过时退出码为 0，可挂在提交钩子里使用。
+
 ## 版本与更新
 
 - 当前版本：**v1.9.12**（见「关于」窗口或 `vwm/ui.py` 的 `VERSION`）。
