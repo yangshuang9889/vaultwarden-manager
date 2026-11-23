@@ -3,10 +3,10 @@
 Vaultwarden Manager 模块包（v1.8.0 模块化重构）
 ================================================================
 入口   : vaultwarden_manager.py（薄壳，仅转发 vwm.app.main）
-模块   : config / service / deploy / cert / backup / logs / network / ui / app
+模块   : config / service / deploy / cert / backup / logs / network / webdav / ui / app
 依赖图 : 见 DEV.md「模块结构」章节，无循环依赖。
 """
-__version__ = "1.9.12"
+__version__ = "1.10.0"
 
 try:
     from cryptography import x509

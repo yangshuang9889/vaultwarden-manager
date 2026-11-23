@@ -7,7 +7,7 @@
 [![Python](https://img.shields.io/badge/python-3.11-3776AB?logo=python&logoColor=white)](requirements.txt)
 [![CI](https://github.com/yangshuang9889/vaultwarden-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/yangshuang9889/vaultwarden-manager/actions/workflows/ci.yml)
 
-> 自建 Vaultwarden 的 Windows 桌面管理工具｜版本 v1.9.12｜平台 Windows 10/11 x64｜作者 杨爽工作室｜制作工具 Marvis
+> 自建 Vaultwarden 的 Windows 桌面管理工具｜版本 v1.10.0｜平台 Windows 10/11 x64｜作者 杨爽工作室｜制作工具 Marvis
 
 VaultwardenManager 是一个用 Python + tkinter 编写的**单文件绿色工具**，把「自建 Vaultwarden 密码库服务」的
 部署、启停、访问、备份、排障收拢到一个中文图形界面里。双击运行，不需要命令行，也不需要懂 Tomcat、
@@ -81,6 +81,7 @@ VaultwardenManager 是一个用 Python + tkinter 编写的**单文件绿色工�
 | 13 | 一键加密备份 | 密码保护的全量 `data` 打包，可自选保存位置，文件名带时间戳与随机段防覆盖 |
 | 14 | 导入备份 | 解密后还原，旧 `data` 先改名保留，失败自动回滚，不破坏现有数据 |
 | 15 | 备份安全设计 | PBKDF2-HMAC-SHA256（600,000 次迭代 + 随机盐）、SHA-256 与 CRC 双重完整性校验、拒绝路径穿越与符号链接、限制条目数/解压总量/压缩比、密码不落盘、弱密码拦截 |
+| 15.1 | WebDAV 云备份（v1.10.0） | 加密备份一键上传到 WebDAV 远程存储（支持自建 NAS / Nextcloud 等），主窗口「云备份」按钮可直接上传；支持从云端列出、下载并恢复备份；WebDAV 密码经 Windows DPAPI 加密后存盘，界面与日志均不回显明文；可设置云端保留份数，超出部分才删除旧备份 |
 
 ### 网络与端口
 
@@ -131,7 +132,7 @@ VaultwardenManager 是一个用 Python + tkinter 编写的**单文件绿色工�
 
 ### 方式一：使用发布包（推荐普通用户）
 
-1. 下载最新发布包：**[VaultwardenManager.exe（v1.9.12）](https://github.com/yangshuang9889/vaultwarden-manager/releases/download/v1.9.12/VaultwardenManager.exe)**
+1. 下载最新发布包：**[VaultwardenManager.exe（v1.10.0）](https://github.com/yangshuang9889/vaultwarden-manager/releases/download/v1.10.0/VaultwardenManager.exe)**
    ，约 22.4 MB。历史版本见 [Releases 页面](https://github.com/yangshuang9889/vaultwarden-manager/releases)；若暂无发布包，可用下方「方式二」自行构建。
 
    下载后可核对 SHA256，确认文件完整且未被篡改：
@@ -142,6 +143,7 @@ VaultwardenManager 是一个用 Python + tkinter 编写的**单文件绿色工�
 
    | 版本 | 文件大小 | SHA256 |
    |---|---|---|
+   | v1.10.0 | 23,487,534 字节 | `7824ef63961e56a70e0bf2bf4ca24e801939ac602d242dbde2886877db14e666` |
    | v1.9.12 | 23,451,935 字节 | `861b3c195799dc7853194e4921354e9e53f01b1b0928e16c541435c390fb0d62` |
 
 2. 新建一个空目录（例如 `D:\Vaultwarden`），把 exe 放进去——部署目录会随之生成在该目录下。
@@ -289,7 +291,7 @@ python .github\scripts\check_repo.py
 
 ## 版本与更新
 
-- 当前版本：**v1.9.12**（见「关于」窗口或 `vwm/ui.py` 的 `VERSION`）。
+- 当前版本：**v1.10.0**（见「关于」窗口或 `vwm/ui.py` 的 `VERSION`）。
 - 发布包下载与历史版本：[Releases](https://github.com/yangshuang9889/vaultwarden-manager/releases)。
 - 面向用户的变更记录：[CHANGELOG.md](CHANGELOG.md)。
 - 完整开发记录、模块说明与版本演进：[DEV.md](DEV.md)。

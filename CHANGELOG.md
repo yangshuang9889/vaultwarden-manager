@@ -33,6 +33,29 @@ AIGC:
 
 - `vwm/__init__.py` 的 `__version__` 由 `1.8.0` 对齐为 `1.9.12`，与 `vwm/ui.py` 的 `VERSION`、README、CHANGELOG 四处版本号统一（此前包级版本号停留在模块化重构时的取值）。
 
+## [1.10.0] - 2026-11-24
+
+### 新增
+
+- 新增「WebDAV 加密云备份」功能：把 `data` 目录按既有加密格式（`VWM_ENC_V2` 头 + PBKDF2-HMAC-SHA256 600,000 次 + Fernet）加密后上传到 WebDAV 远程存储，加密格式与迭代次数零改动。
+- 新增 `vwm\webdav.py`（仅标准库 `urllib.request` / `ssl` / `base64` / `ctypes` / `xml.etree`，不新增第三方依赖）：PUT 上传、MKCOL 递归建目录、PROPFIND(Depth:1) 列目录、GET 下载、DELETE 删除，支持 HTTP Basic 认证、可选跳过 TLS 证书校验、可配置超时；401 / 403 / 404 / 507 / 网络异常分别给中文提示。
+- 主窗口新增「云备份」按钮：未配置时引导去设置；配置完整时询问备份密码 → 后台生成加密备份并上传 → 状态栏与 `manager.log` 记录远端路径与大小。按钮矩阵重排为 2 列整齐布局。
+- 设置窗口新增「WebDAV 云备份」分区：地址、账号、密码（`show="*"`，留空表示不修改已存密码）、远程目录、超时、保留份数、「启用加密备份后自动上传」「跳过证书校验」两个复选，以及「测试连接」「从云端恢复」两个操作按钮。
+- 支持云端恢复：列出远端 `.enc` 备份 → 用户选择 → 下载到本地临时位置 → 二次确认 → 调用 `decrypt_and_restore` 还原 `data` 目录。
+- 新增配置字段：`webdav_enabled`、`webdav_url`、`webdav_username`、`webdav_password_enc`、`webdav_verify_ssl`、`webdav_timeout`、`webdav_keep`、`webdav_remote_dir`（旧配置由 `load_config` 自动补齐默认值）。
+
+### 变更
+
+- `webdav_enabled=true` 时，「加密备份」完成后自动追加一次云端上传。
+- `webdav_keep>0` 时按修改时间从新到旧保留指定份数，仅删除超出的远端旧备份；默认 `0` 表示不删除任何云端文件。
+- 设置窗口高度由 560×690 调整为 560×740 以容纳新增分区，分区顺序：退出记忆 / 下载地址 / 浏览器插件连接 / 管理员 / WebDAV 云备份 / 当前信息。
+- 版本号 `v1.9.12` → `v1.10.0`（`vwm\ui.py` 的 `VERSION` 与 `vwm\__init__.py` 的 `__version__` 同步）。
+
+### 安全
+
+- WebDAV 密码不明文落盘：使用 Windows DPAPI（`ctypes` 调 `CryptProtectData` / `CryptUnprotectData`，`CRYPTPROTECT_UI_FORBIDDEN`）加解密，`config.json` 只保存 base64 密文（键 `webdav_password_enc`），界面任何位置均不回显明文，日志与临时文件不含明文。
+- DPAPI 不可用（非 Windows 或调用失败）时给出明确中文提示且不抛异常，功能降级为不可用而非崩溃。
+
 ## [1.9.12] - 2026-11-10
 
 ### 新增

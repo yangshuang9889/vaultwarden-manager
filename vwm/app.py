@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-GUI 主应用模块（v1.8.0）
+GUI 主应用模块（v1.10.0）
 职责：VaultwardenManagerApp（tkinter 主窗口：按钮矩阵、托盘、状态轮询、
       日志展示、部署进度、后台任务线程）与 main 入口。
-依赖：全部业务模块 + ui + 包级 CRYPTO_OK。
+依赖：全部业务模块 + webdav + ui + 包级 CRYPTO_OK。
 """
 import os
 import sys
+import tempfile
 import threading
 import time
 import webbrowser
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext, ttk
 
-from . import CRYPTO_OK
+from . import CRYPTO_OK, webdav
 from .backup import decrypt_and_restore, encrypt_backup, resolve_enc_target
 from .config import (CONFIG_PATH, _migration_notice, _write_default_config,
                      apply_quit_memory, clear_quit_memory, load_config, save_config,
@@ -26,8 +27,9 @@ from .service import (ensure_port_available, find_vw_processes, get_deploy_state
                       stop_service)
 from .ui import (BTN_BG, BTN_BG_ACTIVE, BTN_DISABLED_FG, BTN_SECONDARY_ACTIVE_BG,
                  BTN_SECONDARY_BG, BTN_SECONDARY_FG, TEXT_HINT, TEXT_PRIMARY,
-                 TEXT_SECONDARY, VERSION, ask_quit_or_tray, ask_stop_failed_quit,
-                 open_settings_dialog, prompt_password, prompt_port, show_about_dialog)
+                 TEXT_SECONDARY, VERSION, _centered_geometry, ask_quit_or_tray,
+                 ask_stop_failed_quit, open_settings_dialog, prompt_password,
+                 prompt_port, show_about_dialog)
 
 # v1.9.11：赞助支持卡片已从主窗口移除，「赞助支持 + 收款二维码」统一落到「关于」窗口
 # （实现见 vwm/ui.py 的 show_about_dialog 与 SPONSOR_* 常量），主窗口左侧按钮列下方不再占位。
@@ -138,6 +140,9 @@ class VaultwardenManagerApp(tk.Tk):
                        relief=tk.RAISED, bd=1, cursor="hand2",
                        disabledforeground=BTN_DISABLED_FG)
         self.btns = {}
+        # v1.10.0：新增「云备份」→ 功能按钮由 10 个变 11 个。重排为
+        # row0~row4 两列各 5 行（10 个）保持 2 列整齐，row5「原始日志」与 row6「退出工具」
+        # 各自整行（columnspan=2）收尾，row7 仍为「设置」「关于」，不错位。
         rows = [
             ("deploy", "一键部署", BTN_BG, self.on_deploy),
             ("start", "启动服务", BTN_BG, self.on_start),
@@ -145,24 +150,29 @@ class VaultwardenManagerApp(tk.Tk):
             ("web", "打开 Web", BTN_BG, self.on_web),
             ("admin", "打开面板", BTN_BG, self.on_admin),
             ("enc_backup", "加密备份", BTN_BG, self.on_enc_backup),
+            ("cloud_backup", "云备份", BTN_BG, self.on_cloud_backup),
             ("import_backup", "导入备份", BTN_BG, self.on_import_backup),
             ("change_port", "修改端口", BTN_BG, self.on_change_port),
             ("copy_addr", "复制地址", BTN_BG, self.on_copy_addr),
             ("raw_log", "原始日志", BTN_BG, self.on_toggle_raw),
             ("exit", "退出工具", BTN_BG, self.on_exit),
         ]
-        for i, (key, text, color, cmd) in enumerate(rows):
+        full_row = {"raw_log": 5, "exit": 6}   # 整行按钮：键 → 所在行号
+        cell_index = 0
+        for key, text, color, cmd in rows:
             b = tk.Button(left, text=text, bg=color, fg="white",
                           activebackground=BTN_BG_ACTIVE, activeforeground="white",
                           command=cmd, **btn_cfg)
-            if key == "exit":
-                # v1.7.2：退出按钮占最后一行整行：11 个按钮仍填满 2×6 矩阵
-                b.grid(row=5, column=0, columnspan=2, padx=4, pady=4, sticky="nsew")
+            if key in full_row:
+                # v1.7.2：退出按钮占最后一行整行；v1.10.0：原始日志同样整行，填满矩阵不留空位
+                b.grid(row=full_row[key], column=0, columnspan=2, padx=4, pady=4, sticky="nsew")
             else:
-                b.grid(row=i // 2, column=i % 2, padx=4, pady=4, sticky="nsew")
+                b.grid(row=cell_index // 2, column=cell_index % 2, padx=4, pady=4, sticky="nsew")
+                cell_index += 1
             self.btns[key] = b
         # v1.8.5：矩阵外新增「设置」「关于」特殊样式按钮（白底蓝字 + 蓝色描边，与主操作
-        # 按钮明显区分），位于矩阵底部整行（row6 两列），不参与 2×6 矩阵布局与状态矩阵逻辑。
+        # 按钮明显区分），位于矩阵底部整行（两列），不参与按钮矩阵布局与状态矩阵逻辑。
+        # v1.10.0：矩阵新增一行（原始日志+退出各占整行）后，本行下移至 row7。
         secondary_cfg = dict(font=("Microsoft YaHei UI", 10, "bold"), width=10, height=1,
                              relief=tk.SOLID, bd=1, cursor="hand2",
                              disabledforeground=BTN_DISABLED_FG)
@@ -174,7 +184,7 @@ class VaultwardenManagerApp(tk.Tk):
                           activeforeground=BTN_SECONDARY_FG,
                           highlightbackground=BTN_SECONDARY_FG, highlightthickness=1,
                           command=cmd, **secondary_cfg)
-            b.grid(row=6, column=i, padx=4, pady=(8, 4), sticky="nsew")
+            b.grid(row=7, column=i, padx=4, pady=(8, 4), sticky="nsew")
             self.btns[key] = b
         # v1.9.11：「赞助支持」卡片（v1.9.0 引入、v1.9.6 加二维码）已整体迁至「关于」窗口，
         # 主窗口左侧不再渲染该卡片，按钮列下方保持留白。
@@ -715,8 +725,9 @@ class VaultwardenManagerApp(tk.Tk):
         for key, b in self.btns.items():
             if key == "exit":
                 b.config(state=tk.NORMAL)
-            elif key == "raw_log":
-                # 日志原始/过滤切换为只读展示操作，始终可用
+            elif key in ("raw_log", "cloud_backup"):
+                # 日志原始/过滤切换为只读展示操作，始终可用；
+                # v1.10.0：云备份（上传/恢复）不受服务启停影响，只在 _busy 期间由外部逻辑拦截
                 b.config(state=tk.NORMAL)
             elif key in ("settings", "about"):
                 # v1.8.5：设置/关于为辅助入口，始终可用（不参与服务状态/忙碌禁用）
@@ -1024,8 +1035,22 @@ class VaultwardenManagerApp(tk.Tk):
             # 工作线程回调 → 经 _safe_schedule(0) 回主线程更新状态栏，避免跨线程操作控件
             self._safe_schedule(lambda: self.set_msg(text, "#1971c2"))
 
+        def _job():
+            ok, msg = encrypt_backup(self.cfg, pw, out_path=out_path, stage_cb=_stage)
+            # v1.10.0：勾选「加密备份后自动上传」且 WebDAV 配置完整 → 追加一次上传
+            if not ok or not bool(self.cfg.get("webdav_enabled", False)):
+                return ok, msg
+            ready, rmsg = webdav.check_ready(self.cfg)
+            if not ready:
+                return False, "%s；但未上传云端：%s" % (msg, rmsg)
+            self._safe_schedule(lambda: self.set_msg("加密备份已完成，正在上传到 WebDAV…", "#1971c2"))
+            up_ok, up_msg = webdav.upload_backup(self.cfg, out_path)
+            if not up_ok:
+                return False, "%s；但上传云端失败：%s" % (msg, up_msg)
+            return True, "%s；%s" % (msg, up_msg)
+
         self.set_msg("正在加密备份…", "#1971c2")
-        self.run_task(lambda: encrypt_backup(self.cfg, pw, out_path=out_path, stage_cb=_stage),
+        self.run_task(_job,
                       lambda r: self._log_action("加密备份", r),
                       busy_text="正在加密备份…")
 
@@ -1053,6 +1078,182 @@ class VaultwardenManagerApp(tk.Tk):
         self.run_task(lambda: decrypt_and_restore(self.cfg, path, pw),
                       lambda r: self._log_action("导入备份", r))
 
+    # ---------- WebDAV 云备份（v1.10.0） ----------
+    def _wd_ensure_ready(self, action_name: str) -> bool:
+        """检查 WebDAV 配置是否完整；不完整时引导用户去设置窗口。"""
+        ready, msg = webdav.check_ready(self.cfg)
+        if ready:
+            return True
+        if messagebox.askyesno("WebDAV 云备份",
+                               "%s\n\n现在打开设置窗口配置 WebDAV 吗？" % msg):
+            self.on_settings()
+        else:
+            self.set_msg("WebDAV 尚未配置（%s），已取消%s" % (msg, action_name), TEXT_HINT)
+        return False
+
+    def on_cloud_backup(self):
+        """云备份：生成加密备份 → 上传 WebDAV（未配置时引导去设置）。"""
+        if not CRYPTO_OK:
+            self.set_msg("缺少 cryptography 库，请执行 pip install cryptography 后重试", "#c92a2a")
+            return
+        if not self._wd_ensure_ready("云备份"):
+            return
+        pw = prompt_password(self, "云备份 - 请输入备份密码")
+        if pw is None:
+            self.set_msg("已取消云备份", TEXT_HINT)
+            return
+        out_path = str(resolve_enc_target(self.cfg))
+
+        def _stage(_name, text):
+            self._safe_schedule(lambda: self.set_msg(text, "#1971c2"))
+
+        def _job():
+            ok, msg = encrypt_backup(self.cfg, pw, out_path=out_path, stage_cb=_stage)
+            if not ok:
+                return False, msg
+            self._safe_schedule(lambda: self.set_msg("加密备份已生成，正在上传到 WebDAV…", "#1971c2"))
+            up_ok, up_msg = webdav.upload_backup(self.cfg, out_path)
+            if not up_ok:
+                return False, "%s；但上传云端失败：%s" % (msg, up_msg)
+            return True, "%s；%s" % (msg, up_msg)
+
+        self.run_task(_job,
+                      lambda r: self._log_action("云备份", r),
+                      busy_text="正在生成加密备份…")
+
+    def on_restore_from_cloud(self):
+        """从云端恢复：列远端 .enc → 选择 → 下载到本地临时位置 → 二次确认 → 解密恢复。"""
+        if not CRYPTO_OK:
+            self.set_msg("缺少 cryptography 库，请执行 pip install cryptography 后重试", "#c92a2a")
+            return
+        if not self._wd_ensure_ready("云端恢复"):
+            return
+        if self._service_status in ("running", "abnormal", "foreign"):
+            msg = "服务正在运行，云端恢复会覆盖 data 目录。请先「停止服务」后再从云端恢复。"
+            messagebox.showwarning("从云端恢复", msg)
+            self.set_msg(msg, "#e8590c")
+            return
+        self.set_msg("正在读取云端备份列表…", "#1971c2")
+
+        def _worker():
+            # 网络操作走后台线程，结果经 _safe_schedule 回主线程（列表不能塞进 run_task 的提示位）
+            try:
+                ok, items, msg = webdav.list_remote_backups(self.cfg)
+            except Exception as exc:  # noqa: BLE001
+                ok, items, msg = False, [], "读取云端备份列表异常：%s" % exc
+            self._safe_schedule(lambda: self._after_cloud_list(ok, items, msg))
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def _after_cloud_list(self, ok: bool, items: list, msg: str):
+        if not ok:
+            self.set_msg(str(msg), "#c92a2a")
+            messagebox.showerror("从云端恢复", str(msg))
+            return
+        if not items:
+            text = "云端目录中没有找到加密备份（.enc 文件）。"
+            self.set_msg(text, TEXT_HINT)
+            messagebox.showinfo("从云端恢复", text)
+            return
+        self.set_msg("云端共有 %d 个加密备份，请选择要恢复的版本" % len(items), "#1971c2")
+        chosen = self._choose_remote_backup(items)
+        if not chosen:
+            self.set_msg("已取消云端恢复", TEXT_HINT)
+            return
+        self._download_remote_backup(chosen)
+
+    def _choose_remote_backup(self, items: list):
+        """模态列表窗口选择云端备份，返回选中项 dict，取消返回 None。"""
+        dlg = tk.Toplevel(self)
+        dlg.title("从云端恢复 - 选择备份")
+        dlg.configure(bg="#f0f2f5")
+        dlg.resizable(False, False)
+        dlg.transient(self)
+        dlg.grab_set()
+        dlg.geometry(_centered_geometry(self, 640, 400))
+        tk.Label(dlg, text="云端加密备份（按修改时间从新到旧）：选择要恢复到本机的版本",
+                 font=("Microsoft YaHei UI", 10, "bold"), bg="#f0f2f5",
+                 fg=TEXT_PRIMARY).pack(anchor="w", padx=16, pady=(14, 4))
+        holder = tk.Frame(dlg, bg="#f0f2f5")
+        holder.pack(fill=tk.BOTH, expand=True, padx=16)
+        sb = tk.Scrollbar(holder, orient=tk.VERTICAL)
+        lb = tk.Listbox(holder, font=("Consolas", 9), activestyle="dotbox",
+                        yscrollcommand=sb.set, exportselection=False)
+        sb.config(command=lb.yview)
+        sb.pack(side=tk.RIGHT, fill=tk.Y)
+        lb.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        for it in items:
+            lb.insert(tk.END, "%s    %.2f MB    %s" % (
+                it.get("name", ""), int(it.get("size") or 0) / 1048576.0,
+                it.get("mtime") or "未知时间"))
+        lb.selection_set(0)
+        picked = {"item": None}
+
+        def _ok(_event=None):
+            sel = lb.curselection()
+            if not sel:
+                messagebox.showinfo("从云端恢复", "请先选择一个备份文件。", parent=dlg)
+                return
+            picked["item"] = items[int(sel[0])]
+            dlg.destroy()
+
+        def _cancel(_event=None):
+            picked["item"] = None
+            dlg.destroy()
+
+        row = tk.Frame(dlg, bg="#f0f2f5")
+        row.pack(pady=(6, 14))
+        tk.Button(row, text="恢复选中备份", command=_ok, font=("Microsoft YaHei UI", 10, "bold"),
+                  bg=BTN_BG, fg="white", activebackground=BTN_BG_ACTIVE,
+                  activeforeground="white", relief=tk.RAISED, bd=1, width=14,
+                  cursor="hand2").pack(side=tk.LEFT, padx=8)
+        tk.Button(row, text="取消", command=_cancel, font=("Microsoft YaHei UI", 10, "bold"),
+                  bg=BTN_SECONDARY_BG, fg=BTN_SECONDARY_FG,
+                  activebackground=BTN_SECONDARY_ACTIVE_BG,
+                  activeforeground=BTN_SECONDARY_FG, relief=tk.SOLID, bd=1,
+                  highlightbackground=BTN_SECONDARY_FG, highlightthickness=1,
+                  width=14, cursor="hand2").pack(side=tk.LEFT, padx=8)
+        lb.bind("<Double-Button-1>", _ok)
+        dlg.protocol("WM_DELETE_WINDOW", _cancel)
+        self.wait_window(dlg)
+        return picked["item"]
+
+    def _download_remote_backup(self, item: dict):
+        name = str(item.get("name") or "")
+        local_dir = os.path.join(tempfile.gettempdir(), "vwm_cloud_restore")
+        self.set_msg("正在下载云端备份 %s…" % name, "#1971c2")
+
+        def _worker():
+            try:
+                ok, path, msg = webdav.download_backup(self.cfg, name, local_dir)
+            except Exception as exc:  # noqa: BLE001
+                ok, path, msg = False, "", "下载云端备份异常：%s" % exc
+            self._safe_schedule(lambda: self._confirm_cloud_restore(ok, path, msg))
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def _confirm_cloud_restore(self, ok: bool, path: str, msg: str):
+        if not ok:
+            self.set_msg(str(msg), "#c92a2a")
+            messagebox.showerror("从云端恢复", str(msg))
+            return
+        self.set_msg(str(msg), "#2b8a3e")
+        if not messagebox.askyesno(
+            "确认云端恢复",
+            "已下载云端备份到本地临时位置：\n%s\n\n即将用该备份覆盖当前 data 目录：\n%s\n\n"
+            "现有 data 目录会先改名备份为 data_bak_<时间戳>，以防误操作。\n是否继续？"
+            % (path, self.cfg.get("vaultwarden_dir", "")),
+        ):
+            self.set_msg("已取消云端恢复（未覆盖 data 目录）", TEXT_HINT)
+            return
+        pw = prompt_password(self, "从云端恢复 - 请输入备份密码")
+        if pw is None:
+            self.set_msg("已取消云端恢复", TEXT_HINT)
+            return
+        self.run_task(lambda: decrypt_and_restore(self.cfg, path, pw),
+                      lambda r: self._log_action("云端恢复", r),
+                      busy_text="正在从云端备份恢复…")
+
     def on_copy_addr(self):
         url = self.cfg["domain"]
         self.clipboard_clear()
@@ -1075,8 +1276,9 @@ class VaultwardenManagerApp(tk.Tk):
         """v1.8.5：打开设置窗口；保存后同步 self.cfg 并提示。
 
         v1.9.9：传入 self.set_msg，使设置窗口内「复制地址」等操作结果同步到主窗口状态栏。
+        v1.10.0：传入 self.on_restore_from_cloud，设置窗口「从云端恢复」保存后回调本窗口。
         """
-        res = open_settings_dialog(self, self.cfg, self.set_msg)
+        res = open_settings_dialog(self, self.cfg, self.set_msg, self.on_restore_from_cloud)
         if res is None:
             self.set_msg("已取消设置", TEXT_HINT)
             return

@@ -62,6 +62,16 @@ def build_default_config() -> dict:
         # 旧配置缺该键时由 load_config 用此处默认值自动补齐，用户可自行替换为镜像/商店链接）
         "ext_edge_url": "https://microsoftedge.microsoft.com/addons/search/bitwarden",
         "ext_chrome_url": "https://chromewebstore.google.com/search/bitwarden",
+        # v1.10.0：WebDAV 加密云备份（把 data 目录加密后的 .enc 上传到 WebDAV 远程存储）
+        # 密码不落明文：webdav_password_enc 只保存 DPAPI 加密后的 base64 密文（见 vwm/webdav.py）
+        "webdav_enabled": False,                       # 开关：加密备份完成后是否自动上传云端
+        "webdav_url": "",                              # 服务器地址，如 https://dav.example.com/remote.php/dav/files/user
+        "webdav_username": "",                         # 账号
+        "webdav_password_enc": "",                     # DPAPI 加密后的 base64 密文，禁止明文
+        "webdav_verify_ssl": True,                     # 是否校验 TLS 证书（自签名证书可关）
+        "webdav_timeout": 60,                          # 单次请求超时（秒，5-600）
+        "webdav_keep": 0,                              # 云端保留份数，0=不删除任何云端文件
+        "webdav_remote_dir": "vaultwarden-backup",     # 云端远程目录（相对地址，可多级）
     }
 
 

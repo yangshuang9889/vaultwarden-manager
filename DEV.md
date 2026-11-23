@@ -69,8 +69,8 @@ AIGC:
 
 # Vaultwarden Manager 开发手册（DEV.md）
 
-> 版本：v1.9.12
-> 更新日期：2026-11-10
+> 版本：v1.10.0
+> 更新日期：2026-11-24
 > 项目路径：`E:\yscl\vaultwarden-manager`
 > 管理目标：本机 Vaultwarden 服务（部署目录随程序运行目录，便携化；端口 44444，打开地址按实际监听端口与协议动态拼接）
 
@@ -105,9 +105,10 @@ Vaultwarden Manager 是一个 Windows 桌面 GUI 管理工具，用于管理本�
 | 14 | 操作日志落盘 | 每次按钮操作（一键部署/启动/停止/复制地址/一键加密备份/导入备份/修改端口）完成后自动追加一行 `[时间戳][操作名] 结果摘要` 到部署目录 `manager.log`，复用 `rotate_log_if_needed` 按 `log_max_mb` 阈值轮转；写入失败不影响主流程，仅在状态栏提示（v1.7.2 起「生成证书」「添加系统信任」随按钮移除不再单独落盘，证书/信任状态经一键部署结果消息体现） |
 | 15 | 系统托盘（v1.6.6，v1.8.9 加固） | 关闭窗口（X）或点「退出工具」时弹出全中文确认框：选「退出程序」真正退出，选「最小化到托盘」隐藏窗口并常驻系统托盘；托盘图标单击/双击恢复主窗口，右键菜单含「显示主窗口」「退出程序」；退出时先 `icon.stop()` 清理托盘再销毁主窗口，不残留僵尸图标；托盘不可用（依赖缺失/创建失败）时关闭窗口直接退出并提示。**v1.8.9**：单实例互斥（重复启动自动激活既有窗口、托盘图标唯一）、托盘就绪等待与失败降级、回调线程安全、最小化/恢复幂等、退出清理重试兜底 |
 | 16 | 设置（v1.8.5） | 主按钮矩阵之外的「设置」特殊样式按钮：打开设置窗口，可视化配置退出记忆（`quit_confirm_skip` 跳过确认开关 + `quit_default_action` 默认动作 托盘/退出 单选 + 一键恢复「每次退出都询问」）、编辑部署下载地址（`vw_download_url` / `vw_webvault_download_url` 可查看/修改）、只读展示当前端口与部署目录；保存经 `save_config` 完整写回 config.json（不破坏其他字段），取消不写盘 ；**v1.9.9 新增「浏览器插件连接」分区**（按 `port`/`domain` 动态拼接本机与局域网地址、「复制地址」写剪贴板、「打开地址信任证书」用默认浏览器打开、「获取扩展」打开 `ext_edge_url`/`ext_chrome_url`）；**v1.9.12 新增「管理员」分区**（「获取令牌」只读部署目录 `.env` 的 `ADMIN_TOKEN` 并写系统剪贴板、界面仅显示打码信息、「打开管理面板」用默认浏览器打开 `<协议>://localhost:<port>/admin`） |
-| 17 | 关于（v1.8.6） | 主按钮矩阵之外的「关于」特殊样式按钮：打开关于窗口，展示软件名称 VaultwardenManager、版本（取自 ui.VERSION，随版本升级同步，当前 v1.9.12）、作者/版权（杨爽工作室）、制作人（杨爽）、制作工具（Marvis）、简要说明与「确定」按钮；**v1.8.6 起移除「部署目录」「配置文件」两行纯文本展示**，窗口高度 360→300 保持居中美观；**v1.8.7 起新增「制作人：杨爽」「制作工具：Marvis」两行展示**，窗口高度 300→330 保持居中美观；**v1.9.11 起窗口内新增「赞助支持」区**（赞助文案 + `assets\sponsor_qr.png` 收款二维码，二维码按窗口宽度自适应缩放、缺失时显示占位提示），窗口尺寸 460×330 → 460×560（内容多时按实际需求高度自适应），关于窗口成为赞助信息的唯一入口 |
+| 17 | 关于（v1.8.6） | 主按钮矩阵之外的「关于」特殊样式按钮：打开关于窗口，展示软件名称 VaultwardenManager、版本（取自 ui.VERSION，随版本升级同步，当前 v1.10.0）、作者/版权（杨爽工作室）、制作人（杨爽）、制作工具（Marvis）、简要说明与「确定」按钮；**v1.8.6 起移除「部署目录」「配置文件」两行纯文本展示**，窗口高度 360→300 保持居中美观；**v1.8.7 起新增「制作人：杨爽」「制作工具：Marvis」两行展示**，窗口高度 300→330 保持居中美观；**v1.9.11 起窗口内新增「赞助支持」区**（赞助文案 + `assets\sponsor_qr.png` 收款二维码，二维码按窗口宽度自适应缩放、缺失时显示占位提示），窗口尺寸 460×330 → 460×560（内容多时按实际需求高度自适应），关于窗口成为赞助信息的唯一入口 |
 | 18 | 赞助支持（v1.9.0；v1.9.11 迁入关于窗口） | 浅灰卡片（`#e9ecef` 底）：标题「赞助支持」粗体深灰居中 + 说明文字 8 号深灰居中，三段文案「一元不嫌少，十元不嫌多。/无论金额多少，都是对本软件项目的认可。/赞助属于自愿行为，不购买任何功能、不享有售后服务，仅表达您的一份善意。」+ 收款二维码（Pillow `LANCZOS` 等比缩放，最长边 ≤150px，点击可用系统看图器放大）。**v1.9.0 起位于主窗口「设置」「关于」按钮下方（left 网格 row7 columnspan=2），v1.9.11 起整体迁入关于窗口**（主窗口不再显示赞助卡片，`minsize` 由 860×690 回收为 860×640），纯展示不参与状态矩阵 |
 | 19 | 获取令牌（v1.9.12） | 设置窗口「管理员」分区：一行说明文字 + 「获取令牌」「打开管理面板」两个次级按钮 + 打码状态区（`令牌：Lsbf********（43 位）`）+ 提示行。点「获取令牌」只读部署目录 `.env` 里的 `ADMIN_TOKEN`（由 `service.read_admin_token` 完成，**相对路径按 `APP_DIR` 解析、不依赖进程 CWD**），拿到值写系统剪贴板并提示「已复制到剪贴板」，界面**只显示打码信息（前 4 位 + 8 个星号 + 长度），绝不完整回显**；`.env` 不存在 / 无 `ADMIN_TOKEN` 行 / 值为空 / 值为 `$argon2` 哈希 / 读取失败（含权限不足）均有明确中文提示且不抛异常；令牌**不写入任何日志**（不经 `logs.py`，`manager.log` 无痕）；「打开管理面板」按 `port` 与 `domain` 协议打开 `<协议>://localhost:<port>/admin`，与「浏览器插件连接」分区同一套地址拼接逻辑 |
+| 20 | WebDAV 加密云备份（v1.10.0） | 把 `data` 目录经现有加密格式（`VWM_ENC_V2` 头 + PBKDF2-HMAC-SHA256 600,000 次 + Fernet）生成 `.enc` 后上传到 WebDAV 远程存储，并支持从云端列出、下载、恢复。主窗口新增「云备份」按钮：未配置 WebDAV 时引导去设置窗口；配置完整则询问备份密码 → 后台生成加密备份并上传 → 状态栏与 `manager.log` 记录结果（含远端路径与大小）；`webdav_enabled=true` 时「加密备份」按钮完成后自动追加一次上传。设置窗口新增「WebDAV 云备份」卡片（地址/账号/密码/远程目录/超时/保留份数/两个复选 + 「测试连接」「从云端恢复」），密码经 Windows DPAPI 加密后仅以 base64 密文存 `config.json`，界面**绝不回显明文**。「从云端恢复」列出远端 `.enc` → 用户选择 → 下载到临时位置 → 二次确认 → 调用 `decrypt_and_restore`；`webdav_keep>0` 时按修改时间从新到旧保留对应份数，仅超出才删远端旧备份（默认 0 不删任何云端文件） |
 
 界面要求：常规桌面尺寸与配色、状态醒目，全部文本中文。
 
@@ -126,7 +127,8 @@ E:\yscl\vaultwarden-manager\
 │   ├── cert.py              # 证书（generate_certificate、add_system_trust）
 │   ├── deploy.py            # 一键部署（download_file、extract_webvault_tarball、deploy_service）
 │   ├── backup.py            # 加密备份/恢复（encrypt_backup、decrypt_and_restore；v1.8.8 安全加固：PBKDF2 高迭代密钥派生/弱密码校验/完整性 HMAC/防 zip-slip 与压缩炸弹/旧格式兼容）
-│   ├── ui.py                # 弹窗与 UI 常量/设置·关于窗口（ask_quit_or_tray、prompt_password、prompt_port、open_settings_dialog、show_about_dialog、BTN_*、BTN_SECONDARY_*；v1.9.9 新增浏览器插件连接分区、依赖 network.get_lan_ips 与 webbrowser；v1.9.11 关于窗口内置赞助区，新增 SPONSOR_* 常量与 _sponsor_qr_file/_load_sponsor_qr/_sponsor_qr_max_w，依赖 os/PIL 加载 assets 二维码）
+│   ├── webdav.py            # WebDAV 客户端与密码保护（v1.10.0 新增：put_file/mkcol_recursive/propfind/download_file/delete_file、HTTP Basic、可配超时与可选跳过 TLS 校验、DPAPI protect_password/unprotect_password，仅标准库 urllib/ssl/base64/ctypes/xml.etree）
+│   ├── ui.py                # 弹窗与 UI 常量/设置·关于窗口（ask_quit_or_tray、prompt_password、prompt_port、open_settings_dialog、show_about_dialog、BTN_*、BTN_SECONDARY_*；v1.9.9 新增浏览器插件连接分区、依赖 network.get_lan_ips 与 webbrowser；v1.9.11 关于窗口内置赞助区，新增 SPONSOR_* 常量与 _sponsor_qr_file/_load_sponsor_qr/_sponsor_qr_max_w，依赖 os/PIL 加载 assets 二维码；v1.10.0 设置窗口新增「WebDAV 云备份」卡片，依赖 webdav 做密码 DPAPI 加解密与连接测试）
 │   └── app.py               # GUI 主程序（VaultwardenManagerApp、_build_ui、main）
 ├── config.json              # 配置文件（缺失时程序启动自动创建默认配置）
 ├── assets\                  # 资源目录（v1.9.7 起，随包分发，路径无中文）
@@ -948,7 +950,102 @@ I2 ICO 多尺寸（含 256）、I3 `_asset_path` 三档兜底与不存在的返�
   （`vEthernet (内部虚拟交换机)`，APIPA）；
 - 单次探测 0.043 s（含 `ipconfig` 子进程），缓存命中 0.0000 s。
 
-## 5. 配置说明
+### 4.14 WebDAV 加密云备份（v1.10.0）
+
+**定位**：把 `data` 目录经 §4.4 既有加密格式（`VWM_ENC_V2` 头 + PBKDF2-HMAC-SHA256
+600,000 次 + Fernet）生成 `.enc` 后上传到 WebDAV 远程存储，并支持从云端列出、下载、恢复。
+**加密格式与迭代次数零改动**，`webdav.py` 只负责「传输 + 密码保护」，绝不参与加解密逻辑。
+
+#### 4.14.1 新增模块 `vwm\webdav.py`（仅标准库）
+
+依赖：`urllib.request` / `urllib.error` / `urllib.parse` / `ssl` / `base64` / `ctypes` /
+`xml.etree` / `email.utils` / `socket` / `re` / `os`，**不引入任何第三方依赖**。
+不反向依赖项目内其他模块（避免与 app/ui 形成循环导入），配置值一律通过入参 `cfg` 读取。
+
+常量：`USER_AGENT="VaultwardenManager/1.10.0"`、`DEFAULT_TIMEOUT=60`、
+`DEFAULT_REMOTE_DIR="vaultwarden-backup"`、`ENC_SUFFIX=".enc"`、
+`CRYPTPROTECT_UI_FORBIDDEN=0x1`、`_CHUNK=256*1024`、超时钳制区间 `5s ≤ timeout ≤ 600s`。
+
+#### 4.14.2 密码保护（DPAPI）
+
+| 函数 | 返回 | 说明 |
+|---|---|---|
+| `can_use_dpapi()` | bool | 是否 Windows 且能加载 `crypt32`/`kernel32` |
+| `protect_password(password)` | `(ok, base64 密文, 中文提示)` | `ctypes` 调 `CryptProtectData`，标志位 `CRYPTPROTECT_UI_FORBIDDEN`（禁止弹任何系统 UI），描述串 `VaultwardenManager WebDAV password`；输出 `LocalFree` 释放 |
+| `unprotect_password(encoded)` | `(ok, 明文, 中文提示)` | 调 `CryptUnprotectData` 解 base64 密文；跨账号/跨机器解密失败时提示「密码可能由其他 Windows 账号或其它电脑加密，请在设置里重新填写密码并保存」 |
+
+- **明文不落盘**：`config.json` 只保存 base64 密文（键 `webdav_password_enc`），日志/临时文件亦不含明文；
+  界面密码框 `show="*"` 且**保存后不回填任何明文或密文**，留空即表示「不修改已存密码」。
+- **DPAPI 不可用**（非 Windows / 接口缺失 / 调用失败）：一律返回 `(False, "", 中文提示)`，
+  **绝不上抛异常**；`check_ready()` 同步给出「当前系统无法使用 DPAPI 读取已保存的 WebDAV 密码，请在设置里重新填写」，
+  按钮流程只会失败提示，不会崩溃或静默丢数据。
+
+#### 4.14.3 `WebDAVClient` 客户端能力
+
+| 方法 | 协议 | 说明 |
+|---|---|---|
+| `ensure_dir(remote_dir)` | `MKCOL` | 按 `/` 分段**逐级递归建目录**；`200/201/204/301/302/405`（目录已存在）视为成功 |
+| `list_dir(remote_dir)` | `PROPFIND Depth:1` | 解析多状态 XML（去命名空间取本地名），返回 `[{"name","url","size","is_dir","mtime","mtime_ts"}]`，**按修改时间从新到旧排序**，自动跳过目录自身条目 |
+| `upload_file(local, name, dir, progress_cb)` | `PUT` | 流式上传（`_ProgressReader` 分块 256KB 回调进度），`Content-Length` 显式声明 |
+| `download_file(name, dest, dir, progress_cb)` | `GET` | 先写 `dest.part` 再 `os.replace` 原子替换，失败清理半成品 |
+| `delete_file(name, dir)` | `DELETE` | `200/202/204` 成功；`404` 视为「已不存在」按成功处理 |
+| `probe(remote_dir)` | `PROPFIND Depth:0` | 探测目录是否存在（「测试连接」复用） |
+
+- **认证**：HTTP Basic，用户名/密码 UTF-8 编码后 base64 拼 `Authorization` 头。
+- **TLS**：`webdav_verify_ssl=true` 用 `ssl.create_default_context()`；`false` 用
+  `ssl._create_unverified_context()`（仅用于自签名证书场景，界面明示为「跳过证书校验」）。
+- **超时**：统一由 `webdav_timeout` 控制并钳制到 5–600 秒。
+- **中文错误映射**（`_friendly_http_error` / `_friendly_network_error`）：401 认证失败、403 无权限、
+  404 路径不存在、405 非标准 WebDAV、409 上级目录缺失、423 资源被锁、507 存储空间不足、
+  5xx 服务端错误；网络层区分证书校验失败（提示勾选「跳过证书校验」）、连接超时、DNS 解析失败、
+  端口拒绝连接。**所有异常不外抛**，统一转中文提示字符串。
+
+#### 4.14.4 面向 cfg 的便捷封装
+
+| 函数 | 说明 |
+|---|---|
+| `get_settings(cfg)` | 抽取 8 个 WebDAV 字段并做类型/取值兜底（`_as_bool` / `_as_int` / `normalize_base_url` 补协议去尾斜杠 / `normalize_remote_dir` 去首尾斜杠并压缩重复斜杠），缺键不报错 |
+| `check_ready(cfg)` | 校验地址/账号/密文是否齐备且 DPAPI 可用，返回 `(ok, 中文提示)`（不完整时提示到「设置 → WebDAV 云备份」） |
+| `make_client(cfg, password=None)` | 构造客户端；`password=None` 时解密 `webdav_password_enc`，显式传明文（设置窗口「测试连接」保存前验证）优先 |
+| `test_connection(cfg, password=None)` | 建目录 + 列目录，成功提示「连接成功：远程目录 … 可读写（现有加密备份 N 个）」 |
+| `upload_backup(cfg, enc_path, progress_cb)` | 上传后按 `webdav_keep` 触发 `prune_remote`；成功提示含**远端 URL 与文件大小（MB）** |
+| `list_remote_backups(cfg)` | 只返回远端 `.enc` 文件，已按修改时间从新到旧排序 |
+| `download_backup(cfg, name, local_dir, cb)` | 下载到本地目录，返回 `(ok, 本地路径, 中文提示)` |
+| `delete_remote_backup(cfg, name)` | 删除单个远端备份 |
+| `prune_remote(cfg, keep=None)` | 按保留份数从新到旧保留，仅删除 `files[keep:]` 部分；`keep<=0`（默认 0）**不删除任何云端文件**，返回空提示 |
+
+#### 4.14.5 GUI 入口与线程模型
+
+- **主窗口按钮矩阵新增「云备份」**：功能按钮由 11 个键扩展为
+  `deploy/start/stop/web/admin/enc_backup/cloud_backup/import_backup/change_port/copy_addr/raw_log/exit`，
+  按 `cell_index` 两列排布（`raw_log` 占 `row=5` 整行、`exit` 占 `row=6` 整行），
+  「设置」「关于」固定在 `row=7` 两列次级样式，**不错位、无空位**；
+  `cloud_backup` 与 `raw_log` 同归「始终可点」（`update_button_states` 中固定 `NORMAL`，`_busy` 时统一禁用）。
+- `on_cloud_backup()`：`CRYPTO_OK` 检查 → `_wd_ensure_ready("云备份")`（未配置且用户同意则直接打开设置窗口，
+  否则提示「WebDAV 尚未配置…已取消云备份」）→ `prompt_password` 询问备份密码 →
+  `run_task` 后台执行 `encrypt_backup(resolve_enc_target)` → 上传 `webdav.upload_backup` →
+  `_log_action("云备份", r)` 落 `manager.log`。
+- `on_enc_backup()`（既有「加密备份」）：备份成功且 `webdav_enabled=true` 时**自动追加一次上传**；
+  配置不完整或上传失败不掩盖备份成功事实，消息拼接为「备份成功；但上传云端失败：…」。
+- `on_restore_from_cloud()` 云端恢复五步：① `_wd_ensure_ready("云端恢复")` → ② **服务运行中直接阻断**
+  （提示先「停止服务」）→ ③ 后台线程 `list_remote_backups`，结果经 `_safe_schedule` 回主线程
+  `_after_cloud_list`（列表数据不能塞进 `run_task` 的提示位）→ ④ 模态 `_choose_remote_backup`
+  列出「文件名 + 大小 + 修改时间」，双击或「恢复选中备份」确认 → ⑤ `_download_remote_backup`
+  后台下载到 `%TEMP%\vwm_cloud_restore` → `_confirm_cloud_restore` 二次确认（显示临时路径与部署目录）→
+  `prompt_password` → `run_task(decrypt_and_restore)` → `_log_action("云端恢复", r)`。
+- **线程红线**：所有网络/加密操作一律后台线程，阶段文案经 `_safe_schedule(lambda: self.set_msg(...))`
+  回主线程更新状态栏（`encrypt_backup` 的 `stage_cb` 同样处理），禁止在工作线程直接操作 tkinter 控件。
+- **配置联动**：设置窗口保存时把明文密码 DPAPI 加密写回 `webdav_password_enc`；点「从云端恢复」时先
+  `save_config` 持久化当前表单再置 `result["restore"]=True` 并销毁窗口，主窗口经
+  `open_settings_dialog(..., on_restore=self.on_restore_from_cloud)` 的延后回调（`parent.after(0, ...)`）
+  进入恢复流程，避免「设置窗口尚未释放即弹新窗口」的重入问题。
+
+#### 4.14.6 自检
+
+`tests\verify_webdav_v1100.py`：内置 `ThreadingHTTPServer` 模拟 WebDAV（实现 MKCOL/PUT/PROPFIND/GET/DELETE），
+覆盖 28 项断言（URL 规范化、远程目录规范化、中文错误映射、上传/下载/列目录/删除/递归建目录、
+保留份数清理、DPAPI 加解密往返与空密码兜底、配置缺键兜底），全部 PASS。
+
 
 配置文件 `config.json` 位于程序所在目录（开发模式为脚本目录，打包后为 exe 目录）。
 **程序启动时若文件缺失或损坏，会自动重建默认配置**，不会报错。
@@ -981,6 +1078,14 @@ I2 ICO 多尺寸（含 256）、I3 `_asset_path` 三档兜底与不存在的返�
 | auto_restore_service | `true` | v1.9.8：下次启动是否自动恢复服务的开关（设置对话框「退出后下次启动自动恢复服务」）。`true` 且 `last_exit_service_running=true` 且已部署、当前未运行 → 启动后自动拉起服务；置 `false` 时不再自动启动并清除记忆标志 |
 | ext_edge_url | `https://microsoftedge.microsoft.com/addons/search/bitwarden` | v1.9.9：设置窗口「浏览器插件连接」分区「获取扩展（Edge）」按钮打开的地址（`webbrowser.open`）；旧 config 缺键时由 `load_config` 自动补齐，界面读取时另有 `DEFAULT_CONFIG` 兜底，缺失不会报错 |
 | ext_chrome_url | `https://chromewebstore.google.com/search/bitwarden` | v1.9.9：同上，「获取扩展（Chrome）」按钮打开的地址；旧 config 缺键自动补齐默认值 |
+| webdav_enabled | `false` | v1.10.0：是否启用「加密备份后自动上传」——`true` 时主窗口「加密备份」按钮成功生成 `.enc` 后自动追加一次 WebDAV 上传（上传失败不影响备份本身，消息如实拼接）；「云备份」按钮不受此开关限制 |
+| webdav_url | `""` | v1.10.0：WebDAV 服务器根地址（如 `https://dav.example.com/remote.php/dav/files/user`）。读取时自动补 `https://` 协议、去尾部斜杠；为空即视为未配置，点「云备份」时引导去设置 |
+| webdav_username | `""` | v1.10.0：WebDAV 账号（HTTP Basic 认证）。与密码、地址三者齐备才算配置完整 |
+| webdav_password_enc | `""` | v1.10.0：WebDAV 密码的 **base64 DPAPI 密文**（`CryptProtectData` + `CRYPTPROTECT_UI_FORBIDDEN`）。**明文绝不落盘、界面不回显、日志不记录**；仅当前 Windows 账号可解密，换账号/换机器需重新填写。设置窗口密码框留空表示不修改已存值 |
+| webdav_verify_ssl | `true` | v1.10.0：是否校验 TLS 证书。`false` = 跳过证书校验（设置窗口「跳过证书校验」复选，仅用于自签名证书的自建网盘/WebDAV 服务） |
+| webdav_timeout | `60` | v1.10.0：WebDAV 请求超时（秒），取值自动钳制在 5–600 之间，非法值回退 60 |
+| webdav_keep | `0` | v1.10.0：云端保留份数。`0`（默认）= **不删除任何云端文件**；`>0` 时按修改时间从新到旧保留指定份数，仅删除超出的旧 `.enc` |
+| webdav_remote_dir | `vaultwarden-backup` | v1.10.0：云端远程目录（相对 WebDAV 根地址）。上传前自动 `MKCOL` 逐级创建；首尾斜杠会被规范化去掉，支持多级如 `backup/vaultwarden` |
 
 ## 6. PyInstaller 打包方法
 
@@ -1104,5 +1209,7 @@ python -m PyInstaller -F -w --noconfirm --clean --icon=assets\app.ico --add-data
 | v1.9.11-privacy | 2026-11-09 | Marvis file-agent | **开源前敏感信息脱敏（文档 / 测试脚本 / 源码注释，逻辑零变更，`VERSION` 仍为 v1.9.11）**：① **DEV.md 真实内网 IP 全量替换为 RFC 5737 文档保留段占位**——本机真实局域网地址 → `198.51.100.10`、其默认网关 → `198.51.100.1`、Hyper-V `Default Switch` 虚拟网卡地址 → `192.0.2.1`、APIPA 链路本地地址 → `169.254.10.20`（原文真实地址不再保留于文档），共 16 处；占位地址沿用原排序关系（`192.0.2.1` 仍字典序靠前，§4.13 缺陷根因说明与排序示例保持成立），`8.8.8.8` / `114.114.114.114` / `223.5.5.5`（公共 DNS）与 `127.0.0.1`（回环）作为协议说明保留；真机实测数值（评分 165、探测 0.043 s）保留原始记录，脱敏后占位网段与打分规则（私网段加分）的对应关系不再严格一致。② **tests 硬编码根路径改为可移植写法**——`verify_quit_v192.py`（`ROOT`）、`verify_si_live.py`（`BASE`）、`verify_si_orphan.py`（`BASE`）由 `r"E:\yscl\vaultwarden-manager"` 改为 `Path(__file__).resolve().parent.parent` 动态求值（均落在项目根目录）；`verify_sponsor_qr_v196.py` 的外部项目路径 `E:\yscl\shuage-coin-helper\website\ewm\ewmsk.png` 改为项目内 `assets/sponsor_qr.png` 相对定位，并新增两道保护：缺图或当前版本已无 `vwm.app.SPONSOR_QR_PATH`（v1.9.11 起改为 `assets/sponsor_qr.png` + `_sponsor_qr_file()`）时打印 `[SKIP]` 提示后 `sys.exit(0)`，不再抛 `AttributeError`；`verify_about_sponsor_v1911.py` / `verify_tray_smoke_v1911.py` 的测试夹具 IP 同步改为 `198.51.100.10`。③ **`dist\config.json` 去绝对路径**——`vaultwarden_dir` / `ssl_dir` / `backup_dir` 改为相对路径 `vaultwarden` / `vaultwarden/ssl` / `vaultwarden/backup`（与 `config.example.json` 同风格），其余字段不变。**相对路径解析基准实测结论**：`vwm/config.py` 的 `app_dir()` 决定 `CONFIG_PATH`（打包后为 exe 同级 `config.json`），但 `_migrate_legacy_paths()` 用 `Path(old_raw).expanduser().resolve()` 求值，**相对路径按进程当前工作目录（CWD）解析而非 config/exe 所在目录**；实测 `CWD=dist` → `dist\vaultwarden`，`CWD=项目根` → 项目根 `vaultwarden`，`CWD=System32` → `System32\vaultwarden`。因此常规启动（双击/快捷方式工作目录为 exe 目录）解析正确；若从其它工作目录启动且该目录下存在同名 `vaultwarden` 目录，会触发一次迁移复制并把配置改写为 exe 目录绝对路径。如需彻底消除该 CWD 依赖，建议在 `_migrate_legacy_paths()` 内对非绝对路径改按 `APP_DIR` 拼接后重新打包（本次仅脱敏，未改逻辑、未重新打包）。④ **`vwm/network.py` 两处注释中的真实 IP 同步改为占位**（`192.0.2.1` / `198.51.100.10`，纯注释改动、逻辑零不变，已打包 exe 无需重打）。⑤ 七个改动脚本 `python -m py_compile` 全部通过，`verify_sponsor_qr_v196.py` 实跑输出 `[SKIP]` 且退出码 0。⑥ `vaultwarden\` 正式部署目录（`.env` / `data` / `ssl` / `backup`）本轮零改动，未删除任何文件。 |
 | v1.9.12 | 2026-11-10 | Marvis file-agent | **设置窗口新增「管理员」分区（「获取令牌」+「打开管理面板」）**：`vwm/service.py` 新增三个**只读**函数——`resolve_deploy_dir(cfg, app_dir=None)` 把 `vaultwarden_dir` 解析为绝对路径，**相对路径一律锚定 APP_DIR（打包=exe 目录，源码=项目根），不读进程 CWD**（规避 `_migrate_legacy_paths` 按 CWD 求值导致目录漂移的已知风险点），空值/非法值回落 `APP_DIR/vaultwarden`；`mask_token(token)` 统一打码口径「前 4 位 + 固定 8 星号 + 长度」，如 `Lsbf********（43 位）`；`read_admin_token(cfg, app_dir=None)` 只读部署目录 `.env` 解析 `ADMIN_TOKEN`（正则 `^\s*ADMIN_TOKEN\s*=(.*)$`、去首尾空白、兼容成对引号、多行取第一个非空值），返回 `{ok, code, token, masked, env_path, message}`，`code` 五态 `ok / no_env / no_token / argon2 / read_error`，**任何异常都转中文 message 不向上抛出**；**只读语义**：不生成令牌、不改 `.env`、不调用 `logs` 任何函数（令牌不落盘不落日志）。`vwm/ui.py` `open_settings_dialog` 在「浏览器插件连接」之后、「当前信息（只读）」之前插入第五张卡片 `card_admin`（白底卡片，标题 + 两行说明、状态区 `admin_mask_var` 初值「令牌：尚未获取」、`ext_btn_cfg` 次级样式「获取令牌」「打开管理面板」两按钮、提示行 `admin_tip_var`、底部安全说明文字），配色沿用 `TEXT_PRIMARY/TEXT_SECONDARY/TEXT_HINT`，随 `Canvas + Scrollbar` 滚动，不破坏既有分区与底部「保存设置/取消」；「获取令牌」经 `clipboard_clear` + `clipboard_append` + `update_idletasks` 写系统剪贴板（不新增依赖），**界面只写打码串**、提示「已复制到剪贴板（…）」并回落状态栏绿字，`tk.TclError` 时提示剪贴板不可用；「打开管理面板」按 `cfg["port"]`（缺省回落 `DEFAULT_CONFIG`）与 `admin_path`（自动补前导 `/`）+ 协议探测结果拼 `%s://localhost:%s%s` 交 `webbrowser.open`，与插件连接分区打开逻辑同源；异常分支均中文提示——`.env` 缺失「未找到 .env 文件…请先在主界面完成『一键部署』」、无 `ADMIN_TOKEN`「该配置未设置管理员令牌…可重新『一键部署』自动生成」、`$argon2` 哈希「无法反解，请使用原始密码登录」、读取失败/权限不足给原因；分区编号 ④→⑤、⑤→⑥；`VERSION` → v1.9.12。验证：新增 `tests\verify_admin_token_v1912.py` **59/59 PASS**（A 常量与接口 / B 正常读取含 CRLF·带引号·多行取首个非空·只读不改 `.env` / C 相对路径按 APP_DIR 解析且 CWD 下同名目录令牌不被读到 / D 异常六分支（缺 `.env`、无 `ADMIN_TOKEN`、值为空、argon2 哈希、权限拒绝、目录非法）/ E 打码规范 / F 只读与日志安全（源码无写盘、无 `append_manager_log`、部署目录未产生 `manager.log`）/ G 真机设置窗口（分区齐全、两按钮、初始文案、点击后打码上屏、界面不含完整令牌、剪贴板与 `.env` 值一致、状态栏提示不含令牌、URL 按 `port`+协议拼接、滚动区域覆盖新增分区、保存/取消在位、关闭无残留）/ G18 HTTP 协议分支）；`py_compile` 对 `vwm/service.py`、`vwm/ui.py` 通过，`import` 校验 `ui.VERSION == "v1.9.12"`；本轮**未重新打包 exe**、未触碰任何部署数据；同步更新 §1 功能表（19）、§2 目录结构、§4.0 模块表、§4.1、§4.8、§8。 |
 | 仓库完善 | 2026-11-16 | Marvis | **仓库工程化完善（无功能代码变更，未重新打包 exe）**：新增 `.github/workflows/ci.yml`（Linux 侧仓库自检 + Windows 侧 `pip install -r requirements.txt` 与 `vwm` 各模块导入检查，push/PR 触发）、`.github/scripts/check_repo.py`（纯标准库自检：Python 语法编译、敏感信息扫描〔私钥块/本机绝对路径/真实内网 IP/明文 ADMIN_TOKEN/邮箱〕、版本号一致性、必备文件清单、GitHub YAML 语法，可选 pyyaml）、Issue 表单（缺陷报告 `bug_report.yml`／功能建议 `feature_request.yml`／`config.yml` 引导链接）与 `PULL_REQUEST_TEMPLATE.md`（含禁止粘贴令牌与提交前检查清单）、`.gitattributes`（二进制资源标记 binary，文本文件 `* -text` 不做行尾强制转换，避免一次性重写全部行污染 blame）；README 顶部新增 6 枚徽章（版本/下载量/许可证/平台/Python/CI），「方式一」改为 v1.9.12 发布包直达链接并附文件大小 23,451,935 字节与 SHA256 `861b3c19…fb0d62` 及 `Get-FileHash` 校验命令，「方式二」补真实克隆地址 `https://github.com/yangshuang9889/vaultwarden-manager.git`，「版本与更新」补 Releases 入口与覆盖升级/回滚说明；`vwm/__init__.py` 的 `__version__` 由 `1.8.0` 对齐为 `1.9.12`（与 `vwm/ui.py` VERSION、README、CHANGELOG 四处统一）；CHANGELOG 新增「未发布」段记录本次完善。验证：`python .github/scripts/check_repo.py` 本地 5 项全 PASS（29 个 py 文件语法通过、敏感信息零命中、版本号一致 v1.9.12、必备文件 10 项齐全、4 个 GitHub YAML 语法通过）；本轮未触碰部署数据与 `config.json`。 |
+
+| v1.10.0 | 2026-11-24 | Marvis | **新增「WebDAV 加密云备份」（加密备份上传云端 + 云端列目录/下载/恢复 + DPAPI 密码保护）**：① **新增模块 `vwm\webdav.py`（仅标准库，零新增第三方依赖）**——`urllib.request/urllib.error/urllib.parse`、`ssl`、`base64`、`ctypes`、`xml.etree`、`email.utils`、`socket`、`re`、`os`；`WebDAVClient` 提供 `MKCOL` 递归建目录（`ensure_dir` 按 `/` 分段逐级创建，`405` 视为已存在）、`PROPFIND Depth:1` 列目录（`list_dir` 解析多状态 XML 去命名空间取本地名，返回 `name/url/size/is_dir/mtime/mtime_ts`，**按修改时间从新到旧排序**，跳过目录自身）、`PUT` 流式上传（`_ProgressReader` 256KB 分块回调进度）、`GET` 下载（先写 `.part` 再 `os.replace` 原子替换，失败清理半成品）、`DELETE` 删除（`404` 视为已删除）、`PROPFIND Depth:0` 探测；HTTP Basic 认证、`webdav_verify_ssl=false` 时用不校验证书的 SSL 上下文、超时统一钳制 5–600 秒；错误统一映射中文（401 认证失败 / 403 无权限 / 404 路径不存在 / 405 非标准 WebDAV / 409 上级目录缺失 / 423 资源被锁 / 507 存储空间不足 / 5xx 服务端错误 / 证书校验失败提示勾选跳过校验 / 连接超时 / DNS 解析失败 / 端口拒绝），**任何异常不外抛**。② **密码保护（DPAPI）**——`can_use_dpapi()` / `protect_password()`（`ctypes` 调 `CryptProtectData`，标志 `CRYPTPROTECT_UI_FORBIDDEN`，`LocalFree` 释放）/ `unprotect_password()`（`CryptUnprotectData`），`config.json` 仅存 base64 密文键 `webdav_password_enc`，**明文不落盘、界面不回显、日志不记录**，界面留空表示不修改已存密码；DPAPI 不可用/跨账号解密失败时返回 `(False, "", 中文提示)` 且**绝不抛异常**，流程降级为提示「请在设置里重新填写密码并保存」。③ **`vwm/config.py`** `build_default_config()` 追加 8 键：`webdav_enabled=false`、`webdav_url=""`、`webdav_username=""`、`webdav_password_enc=""`、`webdav_verify_ssl=true`、`webdav_timeout=60`、`webdav_keep=0`、`webdav_remote_dir="vaultwarden-backup"`（旧 config 由 `load_config` 的 merged 机制自动补齐，缺失不报错）；`webdav.get_settings()` 另做取值兜底与 URL/目录规范化（补协议、去尾斜杠、压缩重复斜杠）。④ **`vwm/ui.py`** 设置窗口新增「WebDAV 云备份」白色卡片（地址/账号/密码 `show="*"`/远程目录/超时/保留份数 + 「启用加密备份后自动上传」「跳过证书校验」复选 + 「测试连接」「从云端恢复」次级按钮，沿用 `ext_btn_cfg` 与 `TEXT_*` 配色），随 `Canvas + Scrollbar` 滚动，底部「保存设置/取消」仍固定；保存时 `_apply_webdav` 把明文密码经 DPAPI 加密写回 `webdav_password_enc`（加密失败弹窗中止保存）；`open_settings_dialog` 新增可选参数 `on_restore=None`，「从云端恢复」先 `save_config` 持久化表单再置 `result["restore"]=True` 销毁窗口，经 `parent.after(0, on_restore)` 延后回调，规避窗口重入；窗口 560×690 → **560×740**。⑤ **`vwm/app.py`** 按钮矩阵新增「云备份」（功能键 11 个：deploy/start/stop/web/admin/enc_backup/cloud_backup/import_backup/change_port/copy_addr/raw_log/exit，`cell_index` 两列排布，`raw_log` 占第 5 行整行、`exit` 占第 6 行整行，「设置」「关于」固定第 7 行两列，**2 列整齐不错位**）；`update_button_states` 把 `cloud_backup` 与 `raw_log` 同归「始终可点」（`_busy` 时统一禁用）；`on_cloud_backup()` = `CRYPTO_OK` 检查 → `_wd_ensure_ready("云备份")`（未配置且用户同意直接打开设置窗口，否则提示已取消）→ `prompt_password` → `run_task` 后台 `encrypt_backup` → `webdav.upload_backup` → `_log_action("云备份")` 落 `manager.log`；`on_enc_backup()` 在 `webdav_enabled=true` 时备份成功后**自动追加一次上传**（上传失败不掩盖备份成果，消息拼接「备份成功；但上传云端失败：…」）；`on_restore_from_cloud()` 五步（配置检查 → **服务运行中直接阻断并提示先停止服务** → 后台 `list_remote_backups` 经 `_safe_schedule` 回主线程 `_after_cloud_list` → 模态 `_choose_remote_backup` 列表展示「文件名 + MB + 修改时间」双击/按钮确认 → `_download_remote_backup` 下载至 `%TEMP%\vwm_cloud_restore` → `_confirm_cloud_restore` 二次确认（显示临时路径与部署目录）→ `prompt_password` → `run_task(decrypt_and_restore)` → `_log_action("云端恢复")`）；所有网络/加密操作走后台线程，阶段文案一律经 `_safe_schedule` 回主线程，工作线程不触碰 tkinter 控件。⑥ **加密格式零改动**——完全复用 `backup.py` 的 `VWM_ENC_V2` 头 + PBKDF2-HMAC-SHA256 600,000 次 + Fernet 与 `encrypt_backup` / `decrypt_and_restore`，`webdav.py` 只承担传输与密码保护。⑦ **保留份数**——`webdav_keep=0`（默认）**不删除任何云端文件**；`>0` 时上传后按修改时间从新到旧保留指定份数，仅删除超出的旧 `.enc`。⑧ **版本与文档**——`vwm/ui.py` `VERSION`、`vwm/__init__.py` `__version__` 均由 v1.9.12 → **v1.10.0**；DEV.md 更新头部版本/日期、§1 功能表（20）、§2 目录结构与模块表登记 `webdav.py`、§4.0 模块表、新增 **§4.14 WebDAV 加密云备份**（功能定位 / 标准库依赖 / DPAPI 密码保护 / `WebDAVClient` 能力与中文错误表 / cfg 便捷封装 / GUI 入口与线程模型 / 自检）、§5 新增 8 个配置字段说明、§8 本条记录。⑨ **自检**——新增 `tests\verify_webdav_v1100.py`（内置 `ThreadingHTTPServer` 模拟 WebDAV 实现 MKCOL/PUT/PROPFIND/GET/DELETE）**28/28 PASS**；GUI 结构冒烟 **16/16 PASS**（版本号、app/ui 导入 webdav、8 字段默认值、`open_settings_dialog` 支持 `on_restore`、`cloud_backup` 按钮与回调齐全、按钮矩阵两列无空位、设置窗口 WebDAV 控件齐全、密码框掩码且初始为空）；`python -m py_compile` 全部模块通过；PyInstaller 按 §6 命令（`--clean` + 全部 9 个 `--exclude-module`）重打包，产物 `dist\VaultwardenManager.exe` 并另复制一份到桌面 `dist` 目录作日常使用副本；未改动正式部署 `vaultwarden\` 数据（`.env` / `data` / `ssl` / `backup`）。 |
 
 *（内容由AI生成，仅供参考）*

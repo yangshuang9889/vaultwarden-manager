@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-界面组件模块（v1.9.11）
+界面组件模块（v1.10.0）
 职责：配色常量、居中几何计算、密码/端口输入弹窗、退出方式确认框、设置/关于窗口
-（v1.9.11 起「赞助支持」区落在关于窗口内，含 assets/sponsor_qr.png 收款二维码）。
-依赖：tkinter 标准库 + config（路径/默认值/保存）+ network（局域网 IP 探测）。
+（v1.9.11 起「赞助支持」区落在关于窗口内，含 assets/sponsor_qr.png 收款二维码；
+v1.10.0 起设置窗口新增「WebDAV 云备份」分区，密码经 DPAPI 加密后才写盘）。
+依赖：tkinter 标准库 + config（路径/默认值/保存）+ network（局域网 IP 探测）+
+      service（管理员令牌）+ webdav（连接测试 / 目录规范化 / 密码加解密）。
 """
 import os
 import threading
@@ -11,6 +13,7 @@ import tkinter as tk
 import webbrowser
 from tkinter import messagebox
 
+from . import webdav
 from .config import CONFIG_PATH, DEFAULT_CONFIG, save_config
 from .network import get_lan_ip_info
 from .service import mask_token, read_admin_token
@@ -28,7 +31,7 @@ TEXT_HINT = "#495057"        # 提示文字（深灰，浅底 #f0f2f5 对比 >5:
 BTN_DISABLED_FG = "#212529"  # v1.7.5：按钮禁用态文字（系统灰底上最深灰，高对比清晰可读）
 
 # v1.9.9：程序版本号（关于窗口展示；版本升级时同步 DEV.md）
-VERSION = "v1.9.12"
+VERSION = "v1.10.0"
 
 # v1.8.5：次级按钮（设置/关于）特殊样式——白底蓝字 + 蓝色描边，明显区别于主操作按钮
 # （蓝底白字 #1971c2/#1864ab），整体仍与 #1971c2 蓝色系协调。
@@ -253,8 +256,9 @@ def ask_stop_failed_quit(parent, detail: str) -> bool:
     return result["quit"]
 
 
-def open_settings_dialog(parent, cfg: dict, on_status=None):
-    """v1.8.5：设置窗口；v1.9.9 新增「浏览器插件连接」分区 + 卡片区滚动布局。
+def open_settings_dialog(parent, cfg: dict, on_status=None, on_restore=None):
+    """v1.8.5：设置窗口；v1.9.9 新增「浏览器插件连接」分区 + 卡片区滚动布局；
+    v1.10.0 新增「WebDAV 云备份」分区。
 
     内容（全中文、居中、与主界面风格一致：浅底 #f0f2f5 + 白色卡片分区 + 蓝主色）：
     ① 退出记忆设置：quit_confirm_skip 开关（跳过退出确认）、quit_default_action 选择
@@ -279,6 +283,8 @@ def open_settings_dialog(parent, cfg: dict, on_status=None):
     小屏/高 DPI 下仍可访问全部分区）；底部「保存设置」「取消」固定在窗口底部不滚动。
     on_status：可选回调 (text, color)，用于把「复制地址」等操作结果同步到主窗口状态栏；
     不传时仅窗口内提示行显示，保持与旧调用方式兼容。
+    on_restore（v1.10.0）：可选回调，点「从云端恢复」时先保存界面上的 WebDAV 设置再关闭
+    设置窗口，由主窗口接管后续恢复流程（列远端备份→下载→二次确认→解密恢复）。
 
     保存：把界面值写回传入的 cfg 并调用 save_config 持久化到 config.json（不破坏
     其他字段），关闭窗口并提示；取消/关闭(X)：不写盘。返回更新后的 cfg，取消返回 None。
@@ -286,11 +292,11 @@ def open_settings_dialog(parent, cfg: dict, on_status=None):
     win = tk.Toplevel(parent)
     win.title("设置")
     win.configure(bg="#f0f2f5")
-    win.geometry(_centered_geometry(parent, 560, 690))
+    win.geometry(_centered_geometry(parent, 560, 740))
     win.resizable(False, False)
     win.transient(parent)
     win.grab_set()
-    result = {"cfg": None}
+    result = {"cfg": None, "restore": False}
 
     # ---- v1.9.9：卡片区滚动容器（卡片本身样式/间距不变，仅更换承载容器）----
     body = tk.Frame(win, bg="#f0f2f5")
@@ -617,7 +623,157 @@ def open_settings_dialog(parent, cfg: dict, on_status=None):
              font=("Microsoft YaHei UI", 8), bg="#ffffff", fg=TEXT_HINT,
              justify="left", anchor="w", wraplength=460).pack(fill=tk.X, padx=18, pady=(0, 12))
 
-    # ---- 卡片五：当前信息（只读） ----
+    # ---- 卡片五：WebDAV 云备份（v1.10.0）----
+    # 密码输入框 show="*"，留空表示不修改已保存密码；保存时经 DPAPI 加密为 base64 密文
+    # 才写入 config.json 的 webdav_password_enc，界面任何位置都不回显明文。
+    card_wd = tk.Frame(inner, bg="#ffffff")
+    card_wd.pack(fill=tk.X, padx=16, pady=4)
+    tk.Label(card_wd, text="WebDAV 云备份", font=("Microsoft YaHei UI", 11, "bold"),
+             bg="#ffffff", fg=TEXT_PRIMARY).pack(anchor="w", padx=14, pady=(12, 4))
+    tk.Label(card_wd,
+             text="把 data 目录加密为 .enc 后上传到 WebDAV 远程存储（支持坚果云、Nextcloud、群晖等）。"
+                  "密码用 Windows 系统凭据保护（DPAPI）加密保存，配置文件里不存明文。",
+             font=("Microsoft YaHei UI", 9), bg="#ffffff", fg=TEXT_HINT,
+             justify="left", anchor="w", wraplength=460).pack(fill=tk.X, padx=18, pady=(0, 6))
+
+    wd_enabled_var = tk.BooleanVar(value=bool(cfg.get("webdav_enabled", False)))
+    wd_verify_var = tk.BooleanVar(value=bool(cfg.get("webdav_verify_ssl", True)))
+    wd_url_var = tk.StringVar(value=str(cfg.get("webdav_url") or ""))
+    wd_user_var = tk.StringVar(value=str(cfg.get("webdav_username") or ""))
+    wd_pwd_var = tk.StringVar(value="")
+    wd_dir_var = tk.StringVar(value=str(cfg.get("webdav_remote_dir") or "vaultwarden-backup"))
+    wd_timeout_var = tk.StringVar(value=str(cfg.get("webdav_timeout") or 60))
+    wd_keep_var = tk.StringVar(value=str(cfg.get("webdav_keep") or 0))
+    has_saved_pwd = bool(str(cfg.get("webdav_password_enc") or "").strip())
+    wd_tip_var = tk.StringVar(
+        value="密码：%s" % ("已保存（Windows DPAPI 加密），留空表示不修改" if has_saved_pwd else "尚未设置"))
+
+    def _wd_row(label_text, var, show=None, label_w=10):
+        row = tk.Frame(card_wd, bg="#ffffff")
+        row.pack(fill=tk.X, padx=18, pady=2)
+        tk.Label(row, text=label_text, width=label_w, anchor="w",
+                 font=("Microsoft YaHei UI", 9), bg="#ffffff",
+                 fg=TEXT_SECONDARY).pack(side=tk.LEFT)
+        ent = tk.Entry(row, textvariable=var, font=("Microsoft YaHei UI", 9),
+                       relief=tk.SOLID, bd=1, show=show or "")
+        ent.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        return ent
+
+    _wd_row("地址", wd_url_var)
+    _wd_row("账号", wd_user_var)
+    _wd_row("密码", wd_pwd_var, show="*")
+    _wd_row("远程目录", wd_dir_var)
+    _wd_row("超时(秒)", wd_timeout_var)
+    _wd_row("保留份数", wd_keep_var)
+    tk.Label(card_wd, text="保留份数填 0 表示不删除任何云端文件；填 N（>0）只保留最新 N 份，超出的远端旧备份才删除。",
+             font=("Microsoft YaHei UI", 8), bg="#ffffff", fg=TEXT_HINT,
+             justify="left", anchor="w", wraplength=460).pack(fill=tk.X, padx=34, pady=(0, 2))
+
+    tk.Checkbutton(card_wd, text="启用加密备份后自动上传（本地加密备份完成后自动传到云端）",
+                   variable=wd_enabled_var, font=("Microsoft YaHei UI", 9), bg="#ffffff",
+                   fg=TEXT_PRIMARY, activebackground="#ffffff", activeforeground=TEXT_PRIMARY,
+                   selectcolor="#ffffff", anchor="w", cursor="hand2").pack(fill=tk.X, padx=18, pady=(2, 0))
+    tk.Checkbutton(card_wd, text="跳过证书校验（自签名证书 / 内网 WebDAV 才勾选）",
+                   variable=wd_verify_var, font=("Microsoft YaHei UI", 9), bg="#ffffff",
+                   fg=TEXT_PRIMARY, activebackground="#ffffff", activeforeground=TEXT_PRIMARY,
+                   selectcolor="#ffffff", anchor="w", cursor="hand2").pack(fill=tk.X, padx=18, pady=(0, 2))
+
+    def _apply_webdav(to_cfg, clear_pwd=True):
+        """把卡片界面值写回 to_cfg（密码 DPAPI 加密）；返回 (ok, 中文提示)。"""
+        to_cfg["webdav_enabled"] = bool(wd_enabled_var.get())
+        to_cfg["webdav_verify_ssl"] = bool(wd_verify_var.get())
+        to_cfg["webdav_url"] = wd_url_var.get().strip()
+        to_cfg["webdav_username"] = wd_user_var.get().strip()
+        to_cfg["webdav_remote_dir"] = webdav.normalize_remote_dir(wd_dir_var.get())
+        # 非法数值回退默认，不因填写错误阻塞保存
+        raw_timeout = wd_timeout_var.get().strip()
+        to_cfg["webdav_timeout"] = int(raw_timeout) if raw_timeout.isdigit() else 60
+        raw_keep = wd_keep_var.get().strip()
+        to_cfg["webdav_keep"] = int(raw_keep) if raw_keep.isdigit() else 0
+        plain = wd_pwd_var.get()
+        if plain:
+            ok, enc, msg = webdav.protect_password(plain)
+            if not ok:
+                return False, msg
+            to_cfg["webdav_password_enc"] = enc
+            if clear_pwd:
+                wd_pwd_var.set("")          # 保存后清空输入框，绝不回显明文
+        return True, ""
+
+    def test_webdav():
+        # 网络操作走后台线程，结果经 win.after 回 UI 线程（设置窗口自身没有 _safe_schedule）
+        tmp = dict(cfg)
+        ok, msg = _apply_webdav(tmp, clear_pwd=False)
+        if not ok:
+            wd_tip_var.set(msg)
+            return
+        if not tmp.get("webdav_url"):
+            wd_tip_var.set("请先填写 WebDAV 地址，例如 https://dav.example.com/remote.php/dav/files/user")
+            return
+        wd_tip_var.set("正在测试连接，请稍候...")
+
+        def _finish(rok, rmsg):
+            try:
+                if not win.winfo_exists():
+                    return
+            except tk.TclError:
+                return
+            wd_tip_var.set(rmsg)
+            if callable(on_status):
+                on_status(rmsg, "#2b8a3e" if rok else "#c92a2a")
+
+        def worker():
+            try:
+                rok, rmsg = webdav.test_connection(tmp)
+            except Exception as exc:  # noqa: BLE001 - 兜底，异常不上抛
+                rok, rmsg = False, "测试连接异常：%s" % exc
+            try:
+                win.after(0, lambda: _finish(rok, rmsg))
+            except tk.TclError:
+                pass
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def restore_from_cloud():
+        tmp = dict(cfg)
+        ok, msg = _apply_webdav(tmp, clear_pwd=False)
+        if not ok:
+            wd_tip_var.set(msg)
+            return
+        if not tmp.get("webdav_url"):
+            wd_tip_var.set("请先填写 WebDAV 地址后再从云端恢复")
+            return
+        if not str(tmp.get("webdav_password_enc") or "").strip():
+            wd_tip_var.set("请先填写 WebDAV 密码（或先保存设置）后再从云端恢复")
+            return
+        # 先持久化，保证主窗口恢复流程拿到的凭据与界面一致
+        if not save_config(tmp):
+            wd_tip_var.set("config.json 写入失败，无法从云端恢复")
+            return
+        cfg.update(tmp)
+        wd_tip_var.set("设置已保存，正在打开云端备份列表...")
+        result["cfg"] = cfg
+        result["restore"] = True
+        win.destroy()
+
+    wd_btn_row = tk.Frame(card_wd, bg="#ffffff")
+    wd_btn_row.pack(fill=tk.X, padx=18, pady=(6, 4))
+    tk.Button(wd_btn_row, text="测试连接", command=test_webdav,
+              **ext_btn_cfg).pack(side=tk.LEFT)
+    tk.Button(wd_btn_row, text="从云端恢复", command=restore_from_cloud,
+              **ext_btn_cfg).pack(side=tk.LEFT, padx=(8, 0))
+
+    tk.Label(card_wd, textvariable=wd_tip_var, font=("Microsoft YaHei UI", 8),
+             bg="#ffffff", fg=TEXT_HINT, justify="left", anchor="w",
+             wraplength=460).pack(fill=tk.X, padx=18, pady=(0, 2))
+    tk.Label(card_wd,
+             text="说明：地址填到目标目录（如 https://dav.jianguoyun.com/dav/ 或 Nextcloud 的 "
+                  "remote.php/dav/files/用户名），程序会在其下自动创建远程目录；账号密码即该 WebDAV 账号。"
+                  "密码只能由当前 Windows 用户解密，换用户或换机器需重新填写。",
+             font=("Microsoft YaHei UI", 8), bg="#ffffff", fg=TEXT_HINT,
+             justify="left", anchor="w", wraplength=460).pack(fill=tk.X, padx=18, pady=(0, 12))
+
+    # ---- 卡片六：当前信息（只读） ----
     card3 = tk.Frame(inner, bg="#ffffff")
     card3.pack(fill=tk.X, padx=16, pady=4)
     tk.Label(card3, text="当前信息（只读）", font=("Microsoft YaHei UI", 11, "bold"),
@@ -642,6 +798,12 @@ def open_settings_dialog(parent, cfg: dict, on_status=None):
         cfg["auto_restore_service"] = bool(restore_var.get())
         if not cfg["auto_restore_service"]:
             cfg["last_exit_service_running"] = False
+        # v1.10.0：WebDAV 设置（密码经 DPAPI 加密后写入 webdav_password_enc）
+        wd_ok, wd_msg = _apply_webdav(cfg)
+        if not wd_ok:
+            wd_tip_var.set(wd_msg)
+            messagebox.showerror("设置", wd_msg, parent=win)
+            return
         ok = save_config(cfg)
         if ok:
             result["cfg"] = cfg
@@ -660,6 +822,9 @@ def open_settings_dialog(parent, cfg: dict, on_status=None):
               activebackground=BTN_BG_ACTIVE, activeforeground="white", **btn_cfg).pack(side=tk.LEFT, padx=8)
     win.protocol("WM_DELETE_WINDOW", cancel)
     parent.wait_window(win)
+    # v1.10.0：「从云端恢复」已保存设置并关闭窗口，恢复流程交给主窗口（after 延后到事件循环）
+    if result.get("restore") and callable(on_restore):
+        parent.after(0, on_restore)
     return result["cfg"]
 
 
